@@ -4,36 +4,64 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>P2P KZT — анализ связок</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-:root{--bg:#101418;--panel:#181e25;--line:#27303a;--tx:#e8ecf1;--mut:#8a96a6;--up:#35c28a;--dn:#ef5b6c;color-scheme:dark}
+:root{--bg:#0a0d12;--panel:rgba(255,255,255,.05);--line:rgba(255,255,255,.09);--tx:#f3f6fa;--mut:#8d99ad;--up:#35e2a0;--dn:#ff6b7a;--ac:#6ea8ff;--ac2:#9b7bff;color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 "Segoe UI",system-ui,sans-serif}
-header{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
-h1{font-size:17px;margin:0 8px 0 0;font-weight:600}
-label{display:flex;gap:6px;align-items:center;color:var(--mut)}
-input,select,button{background:var(--panel);color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
-input{width:120px}input#fee{width:80px}
-button{cursor:pointer}button:hover{border-color:#5aa9ff}
-:focus-visible{outline:2px solid #5aa9ff;outline-offset:1px}
-main{padding:14px 18px;display:flex;flex-direction:column;gap:16px;max-width:1300px;margin:0 auto}
+body{margin:0;background:
+  radial-gradient(520px 300px at 85% -10%,color-mix(in srgb,var(--ac) 14%,transparent),transparent 60%),
+  radial-gradient(480px 320px at -5% 100%,color-mix(in srgb,var(--ac2) 10%,transparent),transparent 60%),
+  var(--bg);
+  color:var(--tx);font:500 14px "Manrope","Segoe UI",system-ui,sans-serif;letter-spacing:.01em}
+header{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+h1{font-size:15.5px;margin:0 6px 0 0;font-weight:800;letter-spacing:-.01em}
+label{display:flex;gap:6px;align-items:center;color:var(--mut);font-size:13px;font-weight:600}
+input,select,button{background:rgba(255,255,255,.05);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font:inherit;font-weight:600}
+input{width:112px}input#fee{width:72px}
+button{cursor:pointer;transition:border-color .15s,transform .12s}
+button:hover{border-color:color-mix(in srgb,var(--ac) 55%,var(--line))}
+button:active{transform:scale(.97)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+#go{background:linear-gradient(135deg,var(--ac),var(--ac2));border:0;color:#06101f;font-weight:800;box-shadow:0 6px 18px color-mix(in srgb,var(--ac) 40%,transparent)}
+main{padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px;max-width:860px;margin:0 auto}
 #st,.note,small{color:var(--mut)}
 small{display:block;font-size:12px}
-.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
-.box h2{font-size:15px;margin:0 0 8px;font-weight:600}
-.big{font-size:18px}
+.pays,.amts,.qc{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pc{all:unset;cursor:pointer;padding:6px 13px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--line);font:700 12.5px "Manrope",sans-serif;color:var(--mut);transition:border-color .15s,color .15s,background .15s,transform .12s}
+.pc:hover{color:var(--tx)}
+.pc:active{transform:scale(.94)}
+.pc.on{background:color-mix(in srgb,var(--ac) 26%,rgba(255,255,255,.05));border-color:var(--ac);color:#fff}
+.pc small{display:inline;margin-left:3px}
+.help{background:linear-gradient(180deg,color-mix(in srgb,var(--ac) 10%,transparent),transparent);border:1px solid color-mix(in srgb,var(--ac) 25%,transparent);border-radius:14px;padding:11px 15px;color:#cdd7e6}
+.help summary{cursor:pointer;font-weight:700;color:#fff;list-style:none}
+.help summary::-webkit-details-marker{display:none}
+.help summary::before{content:"💡 ";}
+.help ol{margin:8px 0 0 18px;padding:0;line-height:1.55;font-size:13px}
+.help li{margin:3px 0}
+.box{background:linear-gradient(165deg,rgba(255,255,255,.065),rgba(255,255,255,.02));border:1px solid var(--line);
+  border-radius:18px;padding:14px 16px;box-shadow:0 10px 28px rgba(0,0,0,.28)}
+.box h2{font-size:15px;margin:0 0 10px;font-weight:800;display:flex;gap:9px;align-items:center;flex-wrap:wrap;letter-spacing:-.01em}
+.big{font-size:17px;font-weight:700}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-th{text-align:left;color:var(--mut);font-weight:500;padding:4px 8px;border-bottom:1px solid var(--line)}
-td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-tr.best td{background:rgba(53,194,138,.1)}
+th{text-align:left;color:var(--mut);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;padding:5px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:hover td{background:rgba(255,255,255,.025)}
+tr.best td{background:color-mix(in srgb,var(--up) 10%,transparent)}
 .up{color:var(--up)}.dn{color:var(--dn)}
+.pill{padding:3px 11px;border-radius:999px;font-size:11.5px;font-weight:800;letter-spacing:.01em}
+.pill.up{background:rgba(53,226,160,.15);color:var(--up)}.pill.dn{background:rgba(255,107,122,.15);color:var(--dn)}
 .wrapx{overflow-x:auto}
-.books{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px}
-.books h3{margin:0 0 6px;font-size:14px;border-left:4px solid var(--c);padding-left:8px}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.two b{font-weight:500;color:var(--mut)}
-.ad{padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}.r1{display:flex;justify-content:space-between;gap:8px}.r1 span{color:var(--mut)}
-  .pays{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pc{border-radius:999px;padding:5px 11px;font-size:13px}.pc.on{background:#2a4a7f;border-color:#6ea8ff}.pc small{display:inline;margin-left:4px}
-code{background:var(--bg);padding:1px 5px;border-radius:4px}
+.books{display:flex;flex-direction:column;gap:12px}
+.books h3{margin:0 0 8px;font-size:14px;font-weight:800;border-left:3px solid var(--c);padding-left:9px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.two{grid-template-columns:1fr}}
+.two b{font-weight:700;color:var(--mut);font-size:12.5px;text-transform:uppercase;letter-spacing:.02em}
+.ad{padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.r1{display:flex;justify-content:space-between;gap:8px}.r1 span{color:var(--mut)}.r1 b{font-weight:800}
+code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:6px;font-size:12px}
 </style>
 </head>
 <body>
@@ -173,6 +201,17 @@ function init(){
   refresh();setRefresh(30);
 }
 init();
+</script>
+
+<script>
+(function(){
+  var tg = window.Telegram && window.Telegram.WebApp;
+  if(!tg) return;
+  document.addEventListener('click', function(e){
+    var t = e.target.closest('button');
+    if(t) try{ tg.HapticFeedback.impactOccurred('light'); }catch(err){}
+  });
+})();
 </script>
 </body>
 </html>

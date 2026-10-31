@@ -4,84 +4,125 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>CryptoTools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{
-  --bg:#0b0f14;--panel:rgba(255,255,255,.045);--line:rgba(255,255,255,.09);
-  --tx:#eef2f7;--mut:#94a0b3;--ac:#6ea8ff;--scale:1;color-scheme:dark
+  --bg:#0a0d12;--panel:rgba(255,255,255,.05);--line:rgba(255,255,255,.09);
+  --tx:#f3f6fa;--mut:#8d99ad;--ac:#6ea8ff;--ac2:#9b7bff;color-scheme:dark
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{
   display:flex;flex-direction:column;background:var(--bg);color:var(--tx);
-  font:14.5px "Segoe UI",system-ui,sans-serif;
+  font:500 14.5px "Manrope","Segoe UI",system-ui,sans-serif;letter-spacing:.01em;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
-  font-size:calc(14.5px * var(--scale));
+  overflow:hidden;position:relative
 }
+.mesh{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(640px 360px at 15% -8%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 60%),
+    radial-gradient(520px 320px at 100% 10%,color-mix(in srgb,var(--ac2) 16%,transparent),transparent 60%),
+    radial-gradient(600px 400px at 50% 120%,color-mix(in srgb,var(--ac) 10%,transparent),transparent 60%),
+    var(--bg);
+  animation:drift 22s ease-in-out infinite alternate}
+@keyframes drift{from{filter:hue-rotate(0deg)}to{filter:hue-rotate(18deg)}}
 header{
-  display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);
-  padding-top:calc(10px + env(safe-area-inset-top,0px));flex:none
+  display:flex;align-items:center;gap:10px;padding:12px 14px;flex:none;
+  padding-top:calc(12px + env(safe-area-inset-top,0px));position:relative;z-index:2
 }
-header b{font-size:16px;letter-spacing:-.01em}
-nav{display:flex;gap:6px;flex:1;justify-content:flex-end}
-nav button{
-  all:unset;cursor:pointer;padding:7px 13px;border-radius:999px;color:var(--mut);
-  font-size:13.5px;transition:background .15s,color .15s
-}
-nav button.on{background:color-mix(in srgb,var(--ac) 22%,transparent);color:#fff}
-nav button:focus-visible{outline:2px solid var(--ac)}
-main{flex:1;position:relative;overflow:hidden}
-iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:var(--bg)}
-iframe.on{display:block}
-#ta{position:fixed;inset:0;background:rgba(5,8,12,.7);display:none;place-items:center;z-index:9;backdrop-filter:blur(4px)}
-#ta.on{display:grid}
-#ta .c{background:#121a26;border:1px solid var(--line);border-radius:16px;padding:22px;max-width:360px;margin:16px;text-align:center}
-#ta h2{margin:0 0 8px;font-size:18px}#ta p{color:#c3ccda;line-height:1.5;margin:0 0 16px}
-#ta button{all:unset;cursor:pointer;background:linear-gradient(135deg,var(--ac),#8b6bff);color:#06101f;font-weight:650;padding:10px 20px;border-radius:10px}
+.brand{display:flex;align-items:center;gap:9px}
+.mark{width:30px;height:30px;border-radius:9px;flex:none;position:relative;
+  background:linear-gradient(135deg,var(--ac),var(--ac2));
+  box-shadow:0 4px 16px color-mix(in srgb,var(--ac) 45%,transparent)}
+.mark svg{position:absolute;inset:0;margin:auto;width:17px;height:17px;stroke:#0a0d12;stroke-width:2.3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+header b{font-size:16.5px;font-weight:800;letter-spacing:-.01em}
+nav{display:flex;gap:4px;margin-left:auto;background:rgba(255,255,255,.04);border:1px solid var(--line);
+  border-radius:14px;padding:3px;position:relative}
+nav button{all:unset;cursor:pointer;position:relative;z-index:1;padding:7px 14px;border-radius:11px;
+  color:var(--mut);font:600 13px "Manrope",sans-serif;transition:color .25s}
+nav button.on{color:#06101f}
+nav button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+#pill{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:11px;
+  background:linear-gradient(135deg,var(--ac),var(--ac2));transition:transform .28s cubic-bezier(.22,1,.36,1);
+  box-shadow:0 2px 10px color-mix(in srgb,var(--ac) 50%,transparent)}
+main{flex:1;position:relative;overflow:hidden;z-index:1}
+.fwrap{position:absolute;inset:0;opacity:0;transform:translateY(6px) scale(.992);pointer-events:none;
+  transition:opacity .32s ease,transform .32s cubic-bezier(.22,1,.36,1)}
+.fwrap.on{opacity:1;transform:none;pointer-events:auto}
+iframe{width:100%;height:100%;border:0;background:transparent;display:block}
+.skel{position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;padding:16px;z-index:0}
+.sk{border-radius:16px;background:linear-gradient(100deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.04) 70%);
+  background-size:200% 100%;animation:sh 1.6s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+#ta{position:fixed;inset:0;background:rgba(6,9,14,.72);backdrop-filter:blur(8px);display:none;place-items:center;z-index:9;
+  opacity:0;transition:opacity .25s}
+#ta.on{display:grid;opacity:1}
+#ta .c{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.025));border:1px solid var(--line);
+  border-radius:22px;padding:26px 24px;max-width:340px;margin:16px;text-align:center;
+  box-shadow:0 24px 60px rgba(0,0,0,.5);transform:translateY(14px) scale(.96);transition:transform .3s cubic-bezier(.22,1,.36,1)}
+#ta.on .c{transform:none}
+.emj{font-size:38px;margin-bottom:6px}
+#ta h2{margin:0 0 8px;font-size:19px;font-weight:800;letter-spacing:-.01em}
+#ta p{color:#c3ccda;line-height:1.55;margin:0 0 20px;font-weight:500}
+#ta button{all:unset;cursor:pointer;display:block;width:100%;background:linear-gradient(135deg,var(--ac),var(--ac2));
+  color:#06101f;font-weight:800;padding:12px 20px;border-radius:13px;font-size:14.5px;
+  box-shadow:0 10px 26px color-mix(in srgb,var(--ac) 40%,transparent);transition:transform .15s}
+#ta button:active{transform:scale(.97)}
 </style>
 </head>
 <body>
+<div class="mesh"></div>
 <header>
-  <b>CryptoTools</b>
+  <div class="brand">
+    <div class="mark"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 8-9"/><path d="M14 5h6v6"/></svg></div>
+    <b>CryptoTools</b>
+  </div>
   <nav id="nav">
+    <div id="pill"></div>
     <button data-t="m">Монитор</button>
     <button data-t="p">P2P KZT</button>
   </nav>
 </header>
 <main>
-  <iframe id="fm" src="crypto-live.html" title="Монитор бирж"></iframe>
-  <iframe id="fp" src="p2p-kzt.html" title="P2P KZT"></iframe>
+  <div class="fwrap on" id="wm"><div class="skel"><div class="sk" style="height:84px"></div><div class="sk" style="height:140px"></div><div class="sk" style="flex:1"></div></div><iframe id="fm" src="crypto-live.html" title="Монитор бирж" onload="this.parentElement.querySelector('.skel').remove()"></iframe></div>
+  <div class="fwrap" id="wp"><div class="skel"><div class="sk" style="height:70px"></div><div class="sk" style="height:110px"></div><div class="sk" style="flex:1"></div></div><iframe id="fp" src="p2p-kzt.html" title="P2P KZT" onload="this.parentElement.querySelector('.skel').remove()"></iframe></div>
 </main>
 <div id="ta"><div class="c">
-  <h2>Добро пожаловать 👋</h2>
-  <p>«Монитор» показывает цены покупки и продажи на нескольких биржах в реальном времени. «P2P KZT» ищет выгодные связки для покупки и продажи криптовалюты за тенге.</p>
-  <button id="tb">Понятно</button>
+  <div class="emj">👋</div>
+  <h2>Добро пожаловать</h2>
+  <p>«Монитор» показывает цены покупки и продажи на нескольких биржах в реальном времени. «P2P KZT» ищет самые выгодные связки для покупки и продажи за тенге.</p>
+  <button id="tb">Погнали</button>
 </div></div>
 <script>
 const tg = window.Telegram && window.Telegram.WebApp;
 const $=id=>document.getElementById(id);
-const frames={m:$('fm'),p:$('fp')};
+const panes={m:$('wm'),p:$('wp')};
 const tabs=[...document.querySelectorAll('nav button')];
+const pill=$('pill');
+
+function haptic(t){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t||'light'); }catch(e){} }
 
 function go(t){
   tabs.forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  Object.entries(frames).forEach(([k,f])=>f.classList.toggle('on',k===t));
+  Object.entries(panes).forEach(([k,p])=>p.classList.toggle('on',k===t));
+  pill.style.transform = t==='p' ? 'translateX(100%)' : 'translateX(0)';
   try{localStorage.setItem('tab',t)}catch(e){}
   if(tg){ t==='m' ? tg.BackButton.hide() : tg.BackButton.show(); }
 }
-tabs.forEach(b=>b.onclick=()=>go(b.dataset.t));
+tabs.forEach(b=>b.onclick=()=>{ if(!b.classList.contains('on')){ haptic('light'); go(b.dataset.t); } });
 
 if(tg){
   tg.ready();
   tg.expand();
   try{ tg.setHeaderColor && tg.setHeaderColor('secondary_bg_color'); }catch(e){}
+  try{ tg.disableVerticalSwipes && tg.disableVerticalSwipes(); }catch(e){}
   const p=tg.themeParams||{};
   const root=document.documentElement.style;
-  if(p.bg_color) root.setProperty('--bg', p.bg_color);
-  if(p.text_color) root.setProperty('--tx', p.text_color);
-  if(p.hint_color) root.setProperty('--mut', p.hint_color);
   if(p.button_color) root.setProperty('--ac', p.button_color);
-  tg.BackButton.onClick(()=>go('m'));
+  tg.BackButton.onClick(()=>{ haptic('light'); go('m'); });
 }
 
 let start='m';
@@ -90,7 +131,7 @@ go(start);
 
 let seen=false; try{ seen = localStorage.getItem('seen')==='1' }catch(e){}
 if(!seen) $('ta').classList.add('on');
-$('tb').onclick=()=>{ $('ta').classList.remove('on'); try{localStorage.setItem('seen','1')}catch(e){} };
+$('tb').onclick=()=>{ haptic('medium'); $('ta').classList.remove('on'); try{localStorage.setItem('seen','1')}catch(e){} };
 </script>
 </body>
 </html>
