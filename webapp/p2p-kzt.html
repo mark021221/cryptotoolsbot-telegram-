@@ -9,76 +9,114 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-:root{--bg:#0a0d12;--panel:rgba(255,255,255,.05);--line:rgba(255,255,255,.09);--tx:#f3f6fa;--mut:#8d99ad;--up:#35e2a0;--dn:#ff6b7a;--ac:#6ea8ff;--ac2:#9b7bff;color-scheme:dark}
+:root{--bg:#060607;--panel:rgba(255,255,255,.045);--line:rgba(255,255,255,.1);--tx:#f6f7f9;--mut:#86898f;--up:#35e2a0;--dn:#ff6b7a;--ac:#ffffff;--ac2:#c9ccd3;color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:
-  radial-gradient(520px 300px at 85% -10%,color-mix(in srgb,var(--ac) 14%,transparent),transparent 60%),
-  radial-gradient(480px 320px at -5% 100%,color-mix(in srgb,var(--ac2) 10%,transparent),transparent 60%),
-  var(--bg);
+body{margin:0;background:radial-gradient(640px 360px at 50% -14%,rgba(255,255,255,.055),transparent 62%),var(--bg);
   color:var(--tx);font:500 14px "Manrope","Segoe UI",system-ui,sans-serif;letter-spacing:.01em}
-header{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
-h1{font-size:15.5px;margin:0 6px 0 0;font-weight:800;letter-spacing:-.01em}
-label{display:flex;gap:6px;align-items:center;color:var(--mut);font-size:13px;font-weight:600}
-input,select,button{background:rgba(255,255,255,.05);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font:inherit;font-weight:600}
-input{width:112px}input#fee{width:72px}
-button{cursor:pointer;transition:border-color .15s,transform .12s}
-button:hover{border-color:color-mix(in srgb,var(--ac) 55%,var(--line))}
-button:active{transform:scale(.97)}
-:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
-#go{background:linear-gradient(135deg,var(--ac),var(--ac2));border:0;color:#06101f;font-weight:800;box-shadow:0 6px 18px color-mix(in srgb,var(--ac) 40%,transparent)}
-main{padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px;max-width:860px;margin:0 auto}
-#st,.note,small{color:var(--mut)}
-small{display:block;font-size:12px}
-.pays,.amts,.qc{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.pc{all:unset;cursor:pointer;padding:6px 13px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--line);font:700 12.5px "Manrope",sans-serif;color:var(--mut);transition:border-color .15s,color .15s,background .15s,transform .12s}
-.pc:hover{color:var(--tx)}
-.pc:active{transform:scale(.94)}
-.pc.on{background:color-mix(in srgb,var(--ac) 26%,rgba(255,255,255,.05));border-color:var(--ac);color:#fff}
-.pc small{display:inline;margin-left:3px}
-.help{background:linear-gradient(180deg,color-mix(in srgb,var(--ac) 10%,transparent),transparent);border:1px solid color-mix(in srgb,var(--ac) 25%,transparent);border-radius:14px;padding:11px 15px;color:#cdd7e6}
+header{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;letter-spacing:-.01em}
+.hcoinbadge{color:var(--mut);font-weight:700;font-size:12px;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.iconbtn{all:unset;cursor:pointer;margin-left:auto;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  background:rgba(255,255,255,.06);border:1px solid var(--line);transition:border-color .15s,transform .12s}
+.iconbtn:hover{border-color:rgba(255,255,255,.3)}.iconbtn:active{transform:scale(.93)}
+.iconbtn svg{width:17px;height:17px;stroke:var(--tx);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ghost{all:unset;cursor:pointer;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid var(--line)}
+.ghost svg{width:16px;height:16px;stroke:var(--tx);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ghost:active{transform:scale(.93)}
+main{padding:16px;display:flex;flex-direction:column;gap:14px;max-width:820px;margin:0 auto}
+.help{background:linear-gradient(180deg,rgba(255,255,255,.05),transparent);border:1px solid var(--line);border-radius:14px;padding:11px 15px;color:#cdd1d8}
 .help summary{cursor:pointer;font-weight:700;color:#fff;list-style:none}
 .help summary::-webkit-details-marker{display:none}
 .help summary::before{content:"💡 ";}
 .help ol{margin:8px 0 0 18px;padding:0;line-height:1.55;font-size:13px}
 .help li{margin:3px 0}
-.box{background:linear-gradient(165deg,rgba(255,255,255,.065),rgba(255,255,255,.02));border:1px solid var(--line);
-  border-radius:18px;padding:14px 16px;box-shadow:0 10px 28px rgba(0,0,0,.28)}
-.box h2{font-size:15px;margin:0 0 10px;font-weight:800;display:flex;gap:9px;align-items:center;flex-wrap:wrap;letter-spacing:-.01em}
-.big{font-size:17px;font-weight:700}
-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-th{text-align:left;color:var(--mut);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;padding:5px 8px;border-bottom:1px solid var(--line)}
-td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-tr:hover td{background:rgba(255,255,255,.025)}
-tr.best td{background:color-mix(in srgb,var(--up) 10%,transparent)}
-.up{color:var(--up)}.dn{color:var(--dn)}
-.pill{padding:3px 11px;border-radius:999px;font-size:11.5px;font-weight:800;letter-spacing:.01em}
+#st{color:var(--mut);font-size:12px;text-align:center}
+.herocard{text-align:center;background:linear-gradient(165deg,rgba(255,255,255,.06),rgba(255,255,255,.015));
+  border:1px solid var(--line);border-radius:20px;padding:22px 18px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.herocard h2{font-size:12.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;margin:0 0 12px;font-weight:700}
+.pill{display:inline-block;padding:4px 13px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.01em}
 .pill.up{background:rgba(53,226,160,.15);color:var(--up)}.pill.dn{background:rgba(255,107,122,.15);color:var(--dn)}
+.big{font-size:15.5px;font-weight:600;color:#e2e5ea;margin:4px 0}
+.big b{color:#fff;font-weight:800}
+.hv{font-size:32px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:4px}
+.note,small{color:var(--mut)}
+small{display:block;font-size:12px}
+dbox,.dbox{background:linear-gradient(165deg,rgba(255,255,255,.045),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.dbox summary{cursor:pointer;list-style:none;padding:13px 15px;font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.dbox summary::-webkit-details-marker{display:none}
+.dbox summary::before{content:"▸";color:var(--mut);transition:transform .2s}
+.dbox[open] summary::before{transform:rotate(90deg)}
+.dbox summary span{color:var(--mut);font-weight:600}
+.dbody{padding:0 14px 14px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{text-align:left;color:var(--mut);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:5px 7px;border-bottom:1px solid var(--line)}
+td{padding:7px 7px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13px}
+tr.best td{background:rgba(255,255,255,.06)}
+.up{color:var(--up)}.dn{color:var(--dn)}
 .wrapx{overflow-x:auto}
-.books{display:flex;flex-direction:column;gap:12px}
-.books h3{margin:0 0 8px;font-size:14px;font-weight:800;border-left:3px solid var(--c);padding-left:9px}
+.books{display:flex;flex-direction:column;gap:10px}
+.books .box{background:rgba(255,255,255,.035);border:1px solid var(--line);border-left:3px solid var(--c);border-radius:13px;padding:11px 13px}
+.books h3{margin:0 0 8px;font-size:13.5px;font-weight:800}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media (max-width:480px){.two{grid-template-columns:1fr}}
-.two b{font-weight:700;color:var(--mut);font-size:12.5px;text-transform:uppercase;letter-spacing:.02em}
-.ad{padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+@media (max-width:420px){.two{grid-template-columns:1fr}}
+.two b{font-weight:700;color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
+.ad{padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}
 .r1{display:flex;justify-content:space-between;gap:8px}.r1 span{color:var(--mut)}.r1 b{font-weight:800}
 code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:6px;font-size:12px}
+#backdrop{position:fixed;inset:0;background:rgba(2,3,5,.6);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .25s;z-index:8}
+#backdrop.on{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;transform:translateY(100%);transition:transform .3s cubic-bezier(.22,1,.36,1);z-index:9;
+  background:#0c0d10;border-top:1px solid var(--line);border-radius:20px 20px 0 0;max-height:85vh;display:flex;flex-direction:column}
+#sheet.on{transform:translateY(0)}
+.shandle{width:36px;height:4px;border-radius:3px;background:rgba(255,255,255,.2);margin:10px auto 2px}
+.sheetc{padding:6px 18px 22px;overflow-y:auto}
+.sheetc h2{font-size:16px;margin:4px 0 14px;font-weight:800;letter-spacing:-.01em}
+.sheetc h3{font-size:12.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 8px;font-weight:700}
+.frow{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.frow label{color:var(--mut);font-size:12.5px;font-weight:600}
+input,select,button{background:rgba(255,255,255,.05);color:var(--tx);border:1px solid var(--line);border-radius:11px;padding:9px 11px;font:600 14px "Manrope",sans-serif}
+input,select{width:100%}
+:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.amts,.pays{display:flex;flex-wrap:wrap;gap:6px}
+.pc{all:unset;cursor:pointer;padding:7px 13px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line);font:700 12.5px "Manrope",sans-serif;color:var(--mut);transition:border-color .15s,color .15s,background .15s,transform .12s}
+.pc:hover{color:var(--tx)}
+.pc:active{transform:scale(.94)}
+.pc.on{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.45);color:#fff}
+.pc small{display:inline;margin-left:3px}
+#closeSettings{all:unset;cursor:pointer;display:block;text-align:center;width:100%;margin-top:18px;background:linear-gradient(135deg,var(--ac),var(--ac2));
+  color:#06101f;font-weight:800;padding:12px;border-radius:13px;font-size:14.5px}
+#closeSettings:active{transform:scale(.98)}
 </style>
 </head>
 <body>
 <header>
-  <h1>P2P KZT: поиск связок</h1>
-  <label>Монета <select id="asset"><option>USDT<option>USDC<option>BTC<option>ETH</select></label>
-  <label>Сумма, ₸ <input id="amount" type="number" min="1000" step="10000"></label>
-  <div class="amts" id="amts"></div>
-  <label>Комиссия перевода между биржами <input id="fee" type="number" min="0" step="any"></label>
-  <button id="go">Обновить</button>
+  <div class="logo">P2P <span class="hcoinbadge" id="hdrCoin">USDT</span></div>
+  <button id="go" class="ghost" aria-label="Обновить" title="Обновить"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-3-6.7M21 3v6h-6"/></svg></button>
+  <button id="openSettings" class="iconbtn" aria-label="Настройки"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
 </header>
 <main>
-  <details class="help" open><summary>Как пользоваться</summary><ol><li>Выберите монету и сумму в тенге — можно нажать на готовую сумму сверху.</li><li>Смотрите блок «Лучшая связка»: зелёный плюс — вариант выгоден, красный — сейчас в плюс не выйти.</li><li>Выберите свой банк в «Способ оплаты», чтобы видеть только подходящие объявления.</li><li>Перед сделкой откройте объявление на бирже и проверьте лимиты, рейтинг продавца и условия.</li></ol></details>
+  <details class="help"><summary>Как пользоваться</summary><ol><li>Выберите монету и сумму в тенге в настройках (⚙).</li><li>Смотрите блок «Лучшая связка»: зелёный плюс — вариант выгоден, красный — сейчас в плюс не выйти.</li><li>Выберите свой банк в «Способ оплаты» в настройках, чтобы видеть только подходящие объявления.</li><li>Перед сделкой откройте объявление на бирже и проверьте лимиты, рейтинг продавца и условия.</li></ol></details>
   <div id="st">Загрузка…</div>
-  <div id="pay" class="pays"></div>
+  <div class="herocard">
+    <h2>Лучшая связка на <span id="heroAmt">—</span></h2>
+    <div id="hero">—</div>
+  </div>
   <div id="out"></div>
 </main>
+<div id="backdrop"></div>
+<div id="sheet">
+  <div class="shandle"></div>
+  <div class="sheetc">
+    <h2>Настройки P2P</h2>
+    <div class="frow"><label>Монета</label><select id="asset"><option>USDT<option>USDC<option>BTC<option>ETH</select></div>
+    <div class="frow"><label>Сумма, ₸</label><input id="amount" type="number" min="1000" step="10000"></div>
+    <div class="amts" id="amts"></div>
+    <div class="frow" style="margin-top:12px"><label>Комиссия перевода между биржами</label><input id="fee" type="number" min="0" step="any"></div>
+    <h3>Способ оплаты</h3>
+    <div id="pay" class="pays"></div>
+    <button id="closeSettings">Готово</button>
+  </div>
+</div>
 <script>
 const PROXY='';
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -169,27 +207,30 @@ const head='<tr><th title="Где и по какой цене вы покупа�
 
 function render(){
   const ids=Object.keys(D),A=S.amount;
-  if(!ids.length){$('out').innerHTML='<div class="box note">Не удалось получить объявления. Проверь интернет-соединение и нажми «Обновить».</div>';return}
+  $('heroAmt').textContent=fm(A)+' ₸';
+  if(!ids.length){$('hero').innerHTML='<div class="note">Не удалось получить объявления. Проверь интернет-соединение и нажми «Обновить».</div>';$('out').innerHTML='';return}
   const rs=routes(A),b=rs[0];
-  let h='<div class="box"><h2>Лучшая связка на '+fm(A)+' ₸ <span class="pill '+(b&&b.pr>=0?'up':'dn')+'">'+(b?(b.pr>=0?'Есть плюс':'Плюса нет'):'Нет вариантов')+'</span></h2>'+(b?
-    `<div class="big">Купить ${S.asset} на <b>${EXS[b.i].name}</b> по ${fp(b.a.price)} ₸ → продать на <b>${EXS[b.j].name}</b> по ${fp(b.b.price)} ₸</div>
-     <div class="big ${b.pr>=0?'up':'dn'}">${sg(b.pr)} ₸ (${b.pc.toFixed(2)}%)${b.pr<0?' — в плюс не выйти':''}</div>`
-    :'<div class="note">Для этой суммы нет подходящих объявлений — попробуй другую.</div>')+
-    `<small>Учтены лимиты объявлений и остаток монет у мерчанта. Не учтены: ваши банковские комиссии, рейтинг и условия мерчантов, задержки.</small></div>`;
-  if(rs.length)h+=`<div class="box"><h2>Все связки на ${fm(A)} ₸</h2><small class="hint" style="margin-bottom:6px">Строки отсортированы по прибыли: сверху самый выгодный вариант.</small><div class="wrapx"><table>${head}${rs.slice(0,8).map((r,k)=>tr(r,k?'':'best')).join('')}</table></div></div>`;
+  $('hero').innerHTML=(b?
+    `<div class="pill ${b.pr>=0?'up':'dn'}" style="margin-bottom:10px">${b.pr>=0?'Есть плюс':'Плюса нет'}</div>
+     <div class="big">Купить ${S.asset} на <b>${EXS[b.i].name}</b> по ${fp(b.a.price)} ₸ → продать на <b>${EXS[b.j].name}</b> по ${fp(b.b.price)} ₸</div>
+     <div class="hv ${b.pr>=0?'up':'dn'}">${sg(b.pr)} ₸</div><small>${b.pc.toFixed(2)}%${b.pr<0?' — в плюс не выйти':''}</small>`
+    :'<div class="pill dn" style="margin-bottom:10px">Нет вариантов</div><div class="note">Для этой суммы нет подходящих объявлений — попробуй другую.</div>')+
+    `<small style="margin-top:10px">Учтены лимиты объявлений и остаток монет у мерчанта. Не учтены: ваши банковские комиссии, рейтинг и условия мерчантов, задержки.</small>`;
+  let h='';
+  if(rs.length)h+=`<details class="dbox"><summary>Все связки <span>(${rs.length})</span></summary><div class="dbody"><small class="hint" style="margin-bottom:6px">Строки отсортированы по прибыли: сверху самый выгодный вариант.</small><div class="wrapx"><table>${head}${rs.slice(0,8).map((r,k)=>tr(r,k?'':'best')).join('')}</table></div></div></details>`;
   const lad=GRID.map(g=>({g,r:routes(g)[0]})),top=lad.filter(x=>x.r&&x.r.pr>0).sort((x,y)=>y.r.pr-x.r.pr)[0];
-  h+=`<div class="box"><h2>Выгодная сумма</h2><small style="margin-bottom:6px">${top?'Максимум прибыли в ₸ — при '+fm(top.g)+' ₸ ('+sg(top.r.pr)+' ₸, '+top.r.pc.toFixed(2)+'%)':'Сейчас ни на одной сумме связка не даёт плюс'}</small>
-   <div class="wrapx"><table><tr><th title="Сколько тенге вы вкладываете">Сумма, ₸<th>Купить<th>Продать<th>Монет<th>Получите, ₸<th>Прибыль, ₸<th>%</tr>${lad.map(({g,r})=>r?tr(r,top&&g===top.g?'best':'').replace('<tr class="'+(top&&g===top.g?'best':'')+'">',`<tr class="${top&&g===top.g?'best':''}"><td>${fm(g)}</td>`):`<tr><td>${fm(g)}</td><td colspan="6" class="note">нет подходящих объявлений</td></tr>`).join('')}</table></div></div>`;
-  h+='<div class="books">'+ids.map(id=>{
+  h+=`<details class="dbox"><summary>Выгодная сумма</summary><div class="dbody"><small style="margin-bottom:6px">${top?'Максимум прибыли в ₸ — при '+fm(top.g)+' ₸ ('+sg(top.r.pr)+' ₸, '+top.r.pc.toFixed(2)+'%)':'Сейчас ни на одной сумме связка не даёт плюс'}</small>
+   <div class="wrapx"><table><tr><th title="Сколько тенге вы вкладываете">Сумма, ₸<th>Купить<th>Продать<th>Монет<th>Получите, ₸<th>Прибыль, ₸<th>%</tr>${lad.map(({g,r})=>r?tr(r,top&&g===top.g?'best':'').replace('<tr class="'+(top&&g===top.g?'best':'')+'">',`<tr class="${top&&g===top.g?'best':''}"><td>${fm(g)}</td>`):`<tr><td>${fm(g)}</td><td colspan="6" class="note">нет подходящих объявлений</td></tr>`).join('')}</table></div></div></details>`;
+  h+=`<details class="dbox"><summary>Объявления по биржам <span>(${ids.length})</span></summary><div class="dbody"><div class="books">`+ids.map(id=>{
     const e=EXS[id],ad=l=>l.filter(x=>x.min<=A&&A<=x.max).slice(0,5).map(x=>`<div class="ad"><div class="r1"><b>${fp(x.price)} ₸</b><span>${esc(x.who)}</span></div>${lim(x)}</div>`).join('')||'<small>нет подходящих</small>';
-    return `<div class="box" style="--c:${e.color}"><h3>${e.name}</h3><div class="two"><div><b>Купить (продавцы)</b>${ad(D[id].asks)}</div><div><b>Продать (покупатели)</b>${ad(D[id].bids)}</div></div></div>`}).join('')+'</div>';
+    return `<div class="box" style="--c:${e.color}"><h3>${e.name}</h3><div class="two"><div><b>Купить (продавцы)</b>${ad(D[id].asks)}</div><div><b>Продать (покупатели)</b>${ad(D[id].bids)}</div></div></div>`}).join('')+'</div></div></details>';
   $('out').innerHTML=h;
 }
 
 function init(){
-  $('asset').value=S.asset;$('amount').value=S.amount;$('fee').value=S.fee;
+  $('asset').value=S.asset;$('amount').value=S.amount;$('fee').value=S.fee;$('hdrCoin').textContent=S.asset;
   const sv=()=>{try{localStorage.setItem('p2p',JSON.stringify(S))}catch(e){}};
-  $('asset').onchange=()=>{S.asset=$('asset').value;S.fee=FEE[S.asset];$('fee').value=S.fee;sv();refresh()};
+  $('asset').onchange=()=>{S.asset=$('asset').value;S.fee=FEE[S.asset];$('fee').value=S.fee;$('hdrCoin').textContent=S.asset;sv();refresh()};
   $('amount').onchange=()=>{S.amount=Math.max(1000,+$('amount').value||100000);sv();render()};
   $('fee').onchange=()=>{S.fee=Math.max(0,+$('fee').value||0);sv();render()};
   $('go').onclick=refresh;
@@ -198,6 +239,11 @@ function init(){
   window.setRefresh=sec=>{clearInterval(window.__t);window.__t=setInterval(refresh,Math.max(10,sec||30)*1000)};
   $('amts').innerHTML=[50000,100000,300000,500000,1000000].map(v=>`<button class="pc" data-v="${v}">${v>=1e6?v/1e6+' млн':v/1000+' тыс.'}</button>`).join('');
   $('amts').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.amount=+b.dataset.v;$('amount').value=S.amount;sv();render()};
+  const openSheet=()=>{$('sheet').classList.add('on');$('backdrop').classList.add('on')};
+  const closeSheet=()=>{$('sheet').classList.remove('on');$('backdrop').classList.remove('on')};
+  $('openSettings').onclick=openSheet;
+  $('closeSettings').onclick=closeSheet;
+  $('backdrop').onclick=closeSheet;
   refresh();setRefresh(30);
 }
 init();

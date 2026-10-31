@@ -10,8 +10,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{
-  --bg:#0a0d12;--panel:rgba(255,255,255,.05);--line:rgba(255,255,255,.09);
-  --tx:#f3f6fa;--mut:#8d99ad;--ac:#6ea8ff;--ac2:#9b7bff;color-scheme:dark
+  --bg:#060607;--panel:rgba(255,255,255,.05);--line:rgba(255,255,255,.1);
+  --tx:#f6f7f9;--mut:#86898f;--ac:#ffffff;--ac2:#c9ccd3;color-scheme:dark
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -22,13 +22,7 @@ body{
   overflow:hidden;position:relative
 }
 .mesh{position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:
-    radial-gradient(640px 360px at 15% -8%,color-mix(in srgb,var(--ac) 20%,transparent),transparent 60%),
-    radial-gradient(520px 320px at 100% 10%,color-mix(in srgb,var(--ac2) 16%,transparent),transparent 60%),
-    radial-gradient(600px 400px at 50% 120%,color-mix(in srgb,var(--ac) 10%,transparent),transparent 60%),
-    var(--bg);
-  animation:drift 22s ease-in-out infinite alternate}
-@keyframes drift{from{filter:hue-rotate(0deg)}to{filter:hue-rotate(18deg)}}
+  background:radial-gradient(760px 420px at 50% -12%,rgba(255,255,255,.06),transparent 62%),var(--bg)}
 header{
   display:flex;align-items:center;gap:10px;padding:12px 14px;flex:none;
   padding-top:calc(12px + env(safe-area-inset-top,0px));position:relative;z-index:2
@@ -43,7 +37,7 @@ nav{display:flex;gap:4px;margin-left:auto;background:rgba(255,255,255,.04);borde
   border-radius:14px;padding:3px;position:relative}
 nav button{all:unset;cursor:pointer;position:relative;z-index:1;padding:7px 14px;border-radius:11px;
   color:var(--mut);font:600 13px "Manrope",sans-serif;transition:color .25s}
-nav button.on{color:#06101f}
+nav button.on{color:#06101f;font-weight:800}
 nav button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
 #pill{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:11px;
   background:linear-gradient(135deg,var(--ac),var(--ac2));transition:transform .28s cubic-bezier(.22,1,.36,1);

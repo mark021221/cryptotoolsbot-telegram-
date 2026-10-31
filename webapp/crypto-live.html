@@ -3,77 +3,124 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <title>Крипто-монитор</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-:root{--bg:#0a0d12;--panel:rgba(255,255,255,.05);--line:rgba(255,255,255,.09);--tx:#f3f6fa;--mut:#8d99ad;--up:#35e2a0;--dn:#ff6b7a;--ac:#6ea8ff;--ac2:#9b7bff;color-scheme:dark}
+:root{--bg:#060607;--panel:rgba(255,255,255,.045);--line:rgba(255,255,255,.1);--tx:#f6f7f9;--mut:#86898f;--up:#35e2a0;--dn:#ff6b7a;--ac:#ffffff;--ac2:#c9ccd3;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:
-  radial-gradient(520px 300px at 85% -10%,color-mix(in srgb,var(--ac) 14%,transparent),transparent 60%),
-  radial-gradient(480px 320px at -5% 100%,color-mix(in srgb,var(--ac2) 10%,transparent),transparent 60%),
+  radial-gradient(640px 360px at 50% -14%,rgba(255,255,255,.055),transparent 62%),
   var(--bg);
   color:var(--tx);font:500 14px "Manrope","Segoe UI",system-ui,sans-serif;letter-spacing:.01em;
   display:flex;flex-direction:column;min-height:100vh}
-header{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
-h1{font-size:15.5px;margin:0 6px 0 0;font-weight:800;letter-spacing:-.01em}
-label.f{display:flex;gap:6px;align-items:center;color:var(--mut);font-size:13px;font-weight:600}
-input,select{background:rgba(255,255,255,.05);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:7px 9px;font:inherit;font-weight:600}
-input#coin{width:82px;text-transform:uppercase}
-input:focus-visible,select:focus-visible,.chip:focus-within,.qbtn:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
-.chips,.qc{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;cursor:pointer;background:rgba(255,255,255,.04);transition:border-color .15s,background .15s;font-weight:600;font-size:13px}
-.chip:has(input:checked){background:color-mix(in srgb,var(--c) 16%,rgba(255,255,255,.04));border-color:color-mix(in srgb,var(--c) 55%,var(--line))}
-.chip input{accent-color:var(--c);margin:0}
-.chip i{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
-.qc button.pc{all:unset;cursor:pointer;padding:6px 13px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--line);font:700 12.5px "Manrope",sans-serif;color:var(--mut);transition:transform .12s,color .15s,border-color .15s}
-.qc button.pc:hover{color:var(--tx);border-color:color-mix(in srgb,var(--ac) 50%,var(--line))}
+header{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;letter-spacing:-.01em}
+.logo i{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 8px var(--up);animation:pulse 1.8s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(53,226,160,.55)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.iconbtn{all:unset;cursor:pointer;margin-left:auto;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  background:rgba(255,255,255,.06);border:1px solid var(--line);transition:border-color .15s,transform .12s}
+.iconbtn:hover{border-color:rgba(255,255,255,.3)}.iconbtn:active{transform:scale(.93)}
+.iconbtn svg{width:17px;height:17px;stroke:var(--tx);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+main{flex:1;display:flex;flex-direction:column;min-height:0;padding:16px;gap:14px}
+.hero{text-align:center;padding:8px 0 2px}
+.hcoin{color:var(--mut);font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.08em}
+.hprice{font-size:40px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:2px 0}
+.hsub{color:var(--mut);font-size:13px;font-weight:600}
+.hn{color:var(--mut)}
+.qc{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.qc button.pc{all:unset;cursor:pointer;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.045);border:1px solid var(--line);font:700 12.5px "Manrope",sans-serif;color:var(--mut);transition:transform .12s,color .15s,border-color .15s}
+.qc button.pc:hover{color:var(--tx);border-color:rgba(255,255,255,.3)}
 .qc button.pc:active{transform:scale(.94)}
-.help{margin:14px 18px 0;background:linear-gradient(180deg,color-mix(in srgb,var(--ac) 10%,transparent),transparent);border:1px solid color-mix(in srgb,var(--ac) 25%,transparent);border-radius:14px;padding:11px 15px;color:#cdd7e6;font-size:13px;line-height:1.5}
-.help b{color:#fff}
-main{flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 18px 18px;gap:14px}
-#cards{display:flex;flex-wrap:wrap;gap:10px}
-.card{flex:1 1 180px;background:linear-gradient(165deg,rgba(255,255,255,.065),rgba(255,255,255,.02));
-  border:1px solid var(--line);border-left:3px solid var(--c);border-radius:16px;padding:12px 14px;
-  box-shadow:0 10px 28px rgba(0,0,0,.28);transition:transform .18s ease}
-.card:hover{transform:translateY(-2px)}
-.card b{display:flex;justify-content:space-between;font-weight:700;color:var(--mut);font-size:13px}
-.card .p{font-size:21px;font-weight:800;margin:3px 0;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--dn);display:inline-block}
-.dot.ok{background:var(--up);box-shadow:0 0 0 0 color-mix(in srgb,var(--up) 60%,transparent);animation:pulse 1.8s ease-out infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--up) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
-.up{color:var(--up)}.dn{color:var(--dn)}
-#info{color:var(--mut);font-size:12.5px}
-.wrap{flex:1;min-height:230px;background:linear-gradient(165deg,rgba(255,255,255,.055),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:18px;position:relative;box-shadow:0 10px 28px rgba(0,0,0,.28)}
+.wrap{min-height:200px;height:38vh;background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:18px;position:relative;box-shadow:0 10px 28px rgba(0,0,0,.35)}
 canvas{position:absolute;inset:0;width:100%;height:100%}
+details.exlist{background:linear-gradient(165deg,rgba(255,255,255,.045),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:16px;overflow:hidden}
+details.exlist summary{cursor:pointer;list-style:none;padding:13px 15px;font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:8px;color:var(--tx)}
+details.exlist summary::-webkit-details-marker{display:none}
+details.exlist summary::before{content:"▸";color:var(--mut);transition:transform .2s}
+details.exlist[open] summary::before{transform:rotate(90deg)}
+details.exlist summary span{color:var(--mut);font-weight:600}
+.exbody{padding:0 14px 14px}
+#sum{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.sb{flex:1 1 150px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+.sb small{display:block;color:var(--mut);font-size:11px}
+.sb strong{font-size:16px;font-variant-numeric:tabular-nums}
+#cards{display:flex;flex-direction:column;gap:8px}
+.card{background:rgba(255,255,255,.035);border:1px solid var(--line);border-left:3px solid var(--c);border-radius:13px;padding:10px 13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.card b{font-weight:700;color:var(--tx);font-size:13px;display:flex;align-items:center;gap:6px;min-width:96px}
+.card b .q{color:var(--mut);font-weight:500;font-size:11.5px}
+.card .rr{display:flex;gap:14px;margin-left:auto;font-variant-numeric:tabular-nums}
+.card .rr div{text-align:right}
+.card .rr small{display:block;color:var(--mut);font-size:10.5px}
+.card .v{font-weight:800;font-size:14px}
+.card .v.best{color:var(--up)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--dn);display:inline-block}
+.dot.ok{background:var(--up);box-shadow:0 0 0 0 rgba(53,226,160,.6);animation:pulse 1.8s ease-out infinite}
+.up{color:var(--up)}.dn{color:var(--dn)}
+#info{color:var(--mut);font-size:11.5px;padding-top:2px}
+#backdrop{position:fixed;inset:0;background:rgba(2,3,5,.6);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .25s;z-index:8}
+#backdrop.on{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;transform:translateY(100%);transition:transform .3s cubic-bezier(.22,1,.36,1);z-index:9;
+  background:#0c0d10;border-top:1px solid var(--line);border-radius:20px 20px 0 0;max-height:82vh;display:flex;flex-direction:column}
+#sheet.on{transform:translateY(0)}
+.shandle{width:36px;height:4px;border-radius:3px;background:rgba(255,255,255,.2);margin:10px auto 2px}
+.sheetc{padding:6px 18px 22px;overflow-y:auto}
+.sheetc h2{font-size:16px;margin:4px 0 14px;font-weight:800;letter-spacing:-.01em}
+.sheetc h3{font-size:12.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 8px;font-weight:700}
+.frow{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.frow label{color:var(--mut);font-size:12.5px;font-weight:600}
+input,select{background:rgba(255,255,255,.05);color:var(--tx);border:1px solid var(--line);border-radius:11px;padding:9px 11px;font:600 14px "Manrope",sans-serif;width:100%}
+input:focus-visible,select:focus-visible,.chip:focus-within{outline:2px solid var(--ac);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--line);border-radius:999px;cursor:pointer;background:rgba(255,255,255,.04);transition:border-color .15s,background .15s;font-weight:600;font-size:13px}
+.chip:has(input:checked){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.4)}
+.chip input{accent-color:var(--c);margin:0}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 6px var(--c)}
+#closeSettings{all:unset;cursor:pointer;display:block;text-align:center;width:100%;margin-top:18px;background:linear-gradient(135deg,var(--ac),var(--ac2));
+  color:#06101f;font-weight:800;padding:12px;border-radius:13px;font-size:14.5px}
+#closeSettings:active{transform:scale(.98)}
 </style>
 </head>
 <body>
 <header>
-  <h1>Крипто-монитор</h1>
-  <label class="f">Монета <input id="coin" list="coins" value="BTC" maxlength="10"></label>
-  <datalist id="coins"><option>BTC<option>ETH<option>SOL<option>XRP<option>DOGE<option>ADA<option>LINK<option>AVAX<option>LTC<option>TON</datalist>
-  <label class="f">Окно
-    <select id="win"><option value="60">1 мин<option value="300" selected>5 мин<option value="900">15 мин<option value="3600">1 час</select>
-  </label>
-  <label class="f">График
-    <select id="metric"><option value="ask">Покупка (ask)<option value="bid">Продажа (bid)</select>
-  </label>
-  <label class="f">Шкала
-    <select id="mode"><option value="price">Цена<option value="pct">Изменение, %</select>
-  </label>
-  <div class="chips" id="chips"></div>
-  <div class="qc" id="qc"></div>
+  <div class="logo"><i></i>Монитор</div>
+  <button id="openSettings" class="iconbtn" aria-label="Настройки"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
 </header>
 <main>
-  <div class="help">Цены обновляются в реальном времени. <b>Купить</b> — по какой цене можно купить монету прямо сейчас, <b>Продать</b> — по какой можно продать. Лучшая цена подсвечена зелёным. Биржи включаются и выключаются кнопками сверху.</div>
-  <div id="sum"></div>
-  <div id="cards"></div>
-  <div id="info"></div>
+  <div class="hero">
+    <div class="hcoin" id="heroCoin">BTC</div>
+    <div class="hprice" id="heroPrice">—</div>
+    <div class="hsub" id="heroSub">подключение…</div>
+  </div>
+  <div class="qc" id="qc"></div>
   <div class="wrap"><canvas id="cv"></canvas></div>
+  <details class="exlist">
+    <summary>Все биржи <span id="exCount"></span></summary>
+    <div class="exbody">
+      <div id="sum"></div>
+      <div id="cards"></div>
+      <div id="info"></div>
+    </div>
+  </details>
 </main>
+<div id="backdrop"></div>
+<div id="sheet">
+  <div class="shandle"></div>
+  <div class="sheetc">
+    <h2>Настройки монитора</h2>
+    <div class="frow"><label>Монета</label><input id="coin" list="coins" value="BTC" maxlength="10" style="text-transform:uppercase"></div>
+    <datalist id="coins"><option>BTC<option>ETH<option>SOL<option>XRP<option>DOGE<option>ADA<option>LINK<option>AVAX<option>LTC<option>TON</datalist>
+    <div class="frow"><label>Окно графика</label><select id="win"><option value="60">1 мин<option value="300" selected>5 мин<option value="900">15 мин<option value="3600">1 час</select></div>
+    <div class="frow"><label>Что показывает график</label><select id="metric"><option value="ask">Покупка (ask)<option value="bid">Продажа (bid)</select></div>
+    <div class="frow"><label>Шкала</label><select id="mode"><option value="price">Цена<option value="pct">Изменение, %</select></div>
+    <h3>Биржи</h3>
+    <div class="chips" id="chips"></div>
+    <button id="closeSettings">Готово</button>
+  </div>
+</div>
 <script>
 const EX = {
   binance:{name:'Binance',color:'#f0b90b',quote:'USDT',
@@ -108,7 +155,45 @@ const EX = {
   bitfinex:{name:'Bitfinex',color:'#7bd35a',quote:'USD',
     url:()=>'wss://api-pub.bitfinex.com/ws/2',
     sub:b=>({event:'subscribe',channel:'ticker',symbol:b.length>3?`t${b}:USD`:`t${b}USD`}),
-    parse:m=>Array.isArray(m)&&Array.isArray(m[1])&&m[1].length>=7?{bid:+m[1][0],ask:+m[1][2]}:null}
+    parse:m=>Array.isArray(m)&&Array.isArray(m[1])&&m[1].length>=7?{bid:+m[1][0],ask:+m[1][2]}:null},
+  bitstamp:{name:'Bitstamp',color:'#1bb13f',quote:'USD',
+    url:()=>'wss://ws.bitstamp.net',
+    sub:b=>({event:'bts:subscribe',data:{channel:`order_book_${b.toLowerCase()}usd`}}),
+    parse:m=>m.event==='data'&&m.data&&m.data.bids&&m.data.bids[0]?{bid:+m.data.bids[0][0],ask:+m.data.asks[0][0]}:null},
+  htx:{name:'HTX',color:'#2f83f0',quote:'USDT',binary:true,
+    url:()=>'wss://api.huobi.pro/ws',
+    sub:b=>({sub:`market.${b.toLowerCase()}usdt.bbo`,id:'cm1'}),
+    onmsg:(m,ws)=>{if(m.ping)ws.send(JSON.stringify({pong:m.ping}))},
+    parse:m=>m.tick&&m.tick.bid?{bid:+m.tick.bid,ask:+m.tick.ask}:null},
+  cryptocom:{name:'Crypto.com',color:'#2a63fa',quote:'USDT',
+    url:()=>'wss://stream.crypto.com/exchange/v1/market',
+    sub:b=>({id:1,method:'subscribe',params:{channels:[`ticker.${b}_USDT`]}}),
+    onmsg:(m,ws)=>{if(m.method==='public/heartbeat')ws.send(JSON.stringify({id:m.id,method:'public/respond-heartbeat'}))},
+    parse:m=>{const d=m.result&&m.result.data&&m.result.data[0];return d&&d.b?{bid:+d.b,ask:+d.k}:null}},
+  kucoin:{name:'KuCoin',color:'#24ae8f',quote:'USDT',
+    custom:(id,tok)=>{
+      const go=async()=>{
+        if(live[id]!==tok)return;
+        let info;
+        try{const r=await fetch('https://api.kucoin.com/api/v1/bullet-public',{method:'POST'});
+          info=(await r.json()).data;if(!info||!info.instanceServers)throw 0}
+        catch(e){if(live[id]===tok)setTimeout(go,4000);return}
+        if(live[id]!==tok)return;
+        const url=`${info.instanceServers[0].endpoint}?token=${info.token}&connectId=${Date.now()}`;
+        let ws,hb;
+        try{ws=new WebSocket(url)}catch(e){return setTimeout(go,4000)}
+        tok.ws=ws;
+        ws.onopen=()=>{ok[id]=true;
+          ws.send(JSON.stringify({id:Date.now(),type:'subscribe',topic:`/market/ticker:${S.coin}-USDT`,privateChannel:false,response:true}));
+          hb=setInterval(()=>ws.readyState===1&&ws.send(JSON.stringify({id:Date.now(),type:'ping'})),Math.max(10000,(info.pingInterval||18000)-2000))};
+        ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}
+          if(m.type!=='message'||!m.data||!m.data.bestBid)return;
+          const q=last[id]=last[id]||{};q.bid=+m.data.bestBid;q.ask=+m.data.bestAsk};
+        ws.onclose=()=>{ok[id]=false;clearInterval(hb);if(live[id]===tok)setTimeout(go,3000)};
+        ws.onerror=()=>ws.close();
+      };
+      go();
+    }}
 };
 const $=id=>document.getElementById(id);
 let S={coin:'BTC',win:300,mode:'price',metric:'ask',on:['binance','bybit','okx','gate','bitget']};
@@ -118,14 +203,21 @@ const save=()=>{try{localStorage.setItem('cm2',JSON.stringify(S))}catch(e){}};
 
 function open(id){
   const ex=EX[id], tok=live[id]={};
+  if(ex.custom){ex.custom(id,tok);return}
   const go=()=>{
     if(live[id]!==tok)return;
     let ws,hb;
     try{ws=new WebSocket(ex.url(S.coin))}catch(e){return setTimeout(go,4000)}
+    if(ex.binary)ws.binaryType='arraybuffer';
     tok.ws=ws;
     ws.onopen=()=>{ok[id]=true;if(ex.sub)ws.send(JSON.stringify(ex.sub(S.coin)));
       if(ex.ping)hb=setInterval(()=>ws.readyState===1&&ws.send(typeof ex.ping==='string'?ex.ping:JSON.stringify(ex.ping)),20000)};
-    ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}
+    ws.onmessage=e=>{let m;
+      try{
+        const txt=ex.binary?pako.inflate(new Uint8Array(e.data),{to:'string'}):e.data;
+        m=JSON.parse(txt);
+      }catch(_){return}
+      if(ex.onmsg)ex.onmsg(m,ws);
       const u=ex.parse(m);if(!u)return;const q=last[id]=last[id]||{};
       if(u.bid>0)q.bid=u.bid;if(u.ask>0)q.ask=u.ask};
     ws.onclose=()=>{ok[id]=false;clearInterval(hb);if(live[id]===tok)setTimeout(go,3000)};
@@ -142,6 +234,13 @@ function cards(){
   const ids=S.on.filter(i=>last[i]&&last[i].bid&&last[i].ask);
   const buy=ids.reduce((m,i)=>!m||last[i].ask<last[m].ask?i:m,null);
   const sell=ids.reduce((m,i)=>!m||last[i].bid>last[m].bid?i:m,null);
+  $('heroCoin').textContent=S.coin;
+  if(buy&&sell){
+    const hb=S.metric==='bid'?sell:buy, hv=S.metric==='bid'?last[sell].bid:last[buy].ask;
+    $('heroPrice').textContent=fmt(hv);
+    $('heroSub').innerHTML=(S.metric==='bid'?'Продать · ':'Купить · ')+EX[hb].name+' <span class="hn">· живых бирж: '+ids.length+'</span>';
+  }else{$('heroPrice').textContent='—';$('heroSub').textContent=ids.length?'ожидание цены…':'подключение…';}
+  $('exCount').textContent='('+ids.length+'/'+S.on.length+')';
   if(buy&&sell){
     const gap=(last[sell].bid/last[buy].ask-1)*100;
     $('sum').innerHTML=
@@ -213,6 +312,11 @@ function init(){
   addEventListener('resize',draw);
   $('qc').innerHTML=['BTC','ETH','SOL','XRP','DOGE','TON'].map(c=>`<button class="pc">${c}</button>`).join('');
   $('qc').onclick=e=>{const b=e.target.closest('button');if(!b)return;$('coin').value=b.textContent;$('coin').onchange()};
+  const openSheet=()=>{$('sheet').classList.add('on');$('backdrop').classList.add('on')};
+  const closeSheet=()=>{$('sheet').classList.remove('on');$('backdrop').classList.remove('on')};
+  $('openSettings').onclick=openSheet;
+  $('closeSettings').onclick=closeSheet;
+  $('backdrop').onclick=closeSheet;
   restartAll();setInterval(tick,1000);tick();
 }
 init();
@@ -228,5 +332,7 @@ init();
   });
 })();
 </script>
+</body>
+</html>
 </body>
 </html>
