@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CryptoTools</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#0b0f14;--panel:rgba(255,255,255,.045);--line:rgba(255,255,255,.09);
+  --tx:#eef2f7;--mut:#94a0b3;--ac:#6ea8ff;--scale:1;color-scheme:dark
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  display:flex;flex-direction:column;background:var(--bg);color:var(--tx);
+  font:14.5px "Segoe UI",system-ui,sans-serif;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  font-size:calc(14.5px * var(--scale));
+}
+header{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);
+  padding-top:calc(10px + env(safe-area-inset-top,0px));flex:none
+}
+header b{font-size:16px;letter-spacing:-.01em}
+nav{display:flex;gap:6px;flex:1;justify-content:flex-end}
+nav button{
+  all:unset;cursor:pointer;padding:7px 13px;border-radius:999px;color:var(--mut);
+  font-size:13.5px;transition:background .15s,color .15s
+}
+nav button.on{background:color-mix(in srgb,var(--ac) 22%,transparent);color:#fff}
+nav button:focus-visible{outline:2px solid var(--ac)}
+main{flex:1;position:relative;overflow:hidden}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:var(--bg)}
+iframe.on{display:block}
+#ta{position:fixed;inset:0;background:rgba(5,8,12,.7);display:none;place-items:center;z-index:9;backdrop-filter:blur(4px)}
+#ta.on{display:grid}
+#ta .c{background:#121a26;border:1px solid var(--line);border-radius:16px;padding:22px;max-width:360px;margin:16px;text-align:center}
+#ta h2{margin:0 0 8px;font-size:18px}#ta p{color:#c3ccda;line-height:1.5;margin:0 0 16px}
+#ta button{all:unset;cursor:pointer;background:linear-gradient(135deg,var(--ac),#8b6bff);color:#06101f;font-weight:650;padding:10px 20px;border-radius:10px}
+</style>
+</head>
+<body>
+<header>
+  <b>CryptoTools</b>
+  <nav id="nav">
+    <button data-t="m">Монитор</button>
+    <button data-t="p">P2P KZT</button>
+  </nav>
+</header>
+<main>
+  <iframe id="fm" src="crypto-live.html" title="Монитор бирж"></iframe>
+  <iframe id="fp" src="p2p-kzt.html" title="P2P KZT"></iframe>
+</main>
+<div id="ta"><div class="c">
+  <h2>Добро пожаловать 👋</h2>
+  <p>«Монитор» показывает цены покупки и продажи на нескольких биржах в реальном времени. «P2P KZT» ищет выгодные связки для покупки и продажи криптовалюты за тенге.</p>
+  <button id="tb">Понятно</button>
+</div></div>
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+const $=id=>document.getElementById(id);
+const frames={m:$('fm'),p:$('fp')};
+const tabs=[...document.querySelectorAll('nav button')];
+
+function go(t){
+  tabs.forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  Object.entries(frames).forEach(([k,f])=>f.classList.toggle('on',k===t));
+  try{localStorage.setItem('tab',t)}catch(e){}
+  if(tg){ t==='m' ? tg.BackButton.hide() : tg.BackButton.show(); }
+}
+tabs.forEach(b=>b.onclick=()=>go(b.dataset.t));
+
+if(tg){
+  tg.ready();
+  tg.expand();
+  try{ tg.setHeaderColor && tg.setHeaderColor('secondary_bg_color'); }catch(e){}
+  const p=tg.themeParams||{};
+  const root=document.documentElement.style;
+  if(p.bg_color) root.setProperty('--bg', p.bg_color);
+  if(p.text_color) root.setProperty('--tx', p.text_color);
+  if(p.hint_color) root.setProperty('--mut', p.hint_color);
+  if(p.button_color) root.setProperty('--ac', p.button_color);
+  tg.BackButton.onClick(()=>go('m'));
+}
+
+let start='m';
+try{ start = localStorage.getItem('tab') || 'm'; }catch(e){}
+go(start);
+
+let seen=false; try{ seen = localStorage.getItem('seen')==='1' }catch(e){}
+if(!seen) $('ta').classList.add('on');
+$('tb').onclick=()=>{ $('ta').classList.remove('on'); try{localStorage.setItem('seen','1')}catch(e){} };
+</script>
+</body>
+</html>

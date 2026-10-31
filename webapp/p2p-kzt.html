@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P2P KZT — анализ связок</title>
+<style>
+:root{--bg:#101418;--panel:#181e25;--line:#27303a;--tx:#e8ecf1;--mut:#8a96a6;--up:#35c28a;--dn:#ef5b6c;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 "Segoe UI",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+h1{font-size:17px;margin:0 8px 0 0;font-weight:600}
+label{display:flex;gap:6px;align-items:center;color:var(--mut)}
+input,select,button{background:var(--panel);color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
+input{width:120px}input#fee{width:80px}
+button{cursor:pointer}button:hover{border-color:#5aa9ff}
+:focus-visible{outline:2px solid #5aa9ff;outline-offset:1px}
+main{padding:14px 18px;display:flex;flex-direction:column;gap:16px;max-width:1300px;margin:0 auto}
+#st,.note,small{color:var(--mut)}
+small{display:block;font-size:12px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.box h2{font-size:15px;margin:0 0 8px;font-weight:600}
+.big{font-size:18px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{text-align:left;color:var(--mut);font-weight:500;padding:4px 8px;border-bottom:1px solid var(--line)}
+td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.best td{background:rgba(53,194,138,.1)}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.wrapx{overflow-x:auto}
+.books{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px}
+.books h3{margin:0 0 6px;font-size:14px;border-left:4px solid var(--c);padding-left:8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two b{font-weight:500;color:var(--mut)}
+.ad{padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}.r1{display:flex;justify-content:space-between;gap:8px}.r1 span{color:var(--mut)}
+  .pays{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pc{border-radius:999px;padding:5px 11px;font-size:13px}.pc.on{background:#2a4a7f;border-color:#6ea8ff}.pc small{display:inline;margin-left:4px}
+code{background:var(--bg);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>P2P KZT: поиск связок</h1>
+  <label>Монета <select id="asset"><option>USDT<option>USDC<option>BTC<option>ETH</select></label>
+  <label>Сумма, ₸ <input id="amount" type="number" min="1000" step="10000"></label>
+  <div class="amts" id="amts"></div>
+  <label>Комиссия перевода между биржами <input id="fee" type="number" min="0" step="any"></label>
+  <button id="go">Обновить</button>
+</header>
+<main>
+  <details class="help" open><summary>Как пользоваться</summary><ol><li>Выберите монету и сумму в тенге — можно нажать на готовую сумму сверху.</li><li>Смотрите блок «Лучшая связка»: зелёный плюс — вариант выгоден, красный — сейчас в плюс не выйти.</li><li>Выберите свой банк в «Способ оплаты», чтобы видеть только подходящие объявления.</li><li>Перед сделкой откройте объявление на бирже и проверьте лимиты, рейтинг продавца и условия.</li></ol></details>
+  <div id="st">Загрузка…</div>
+  <div id="pay" class="pays"></div>
+  <div id="out"></div>
+</main>
+<script>
+const PROXY='';
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fm=n=>Math.round(n).toLocaleString('ru-RU');
+const fp=n=>n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});
+const $=id=>document.getElementById(id);
+const S={asset:'USDT',amount:100000,fee:1,pay:[]};
+try{Object.assign(S,JSON.parse(localStorage.getItem('p2p')||'{}'))}catch(e){}
+const FEE={USDT:1,USDC:1,BTC:0.00005,ETH:0.002};
+const GRID=[20000,50000,100000,200000,300000,500000,1000000,2000000,5000000];
+let D={},ST={},RAW={},METHODS={},TS='';
+const pk=n=>String(n).toLowerCase().replace(/bank|банк/g,'').replace(/[^a-zа-яё0-9]+/g,' ').trim();
+let PAYMAP={},payTried=false;
+const bybitReq=(p,b)=>req('https://api2.bybit.com'+p,'POST',b).catch(()=>req('https://api2.bybit.kz'+p,'POST',b));
+async function loadBybitPay(){if(payTried)return;try{const r=await bybitReq('/fiat/otc/configuration/queryAllPaymentList',{});const L=r.result&&(r.result.paymentConfigVo||r.result);(Array.isArray(L)?L:[]).forEach(x=>{if(x.paymentType!=null&&x.paymentName)PAYMAP[x.paymentType]=x.paymentName});payTried=true}catch(e){}}
+
+async function req(url,m,body){
+  const o={method:m};if(body){o.headers={'Content-Type':'application/json'};o.body=JSON.stringify(body)}
+  const r=await fetch(PROXY+'/fwd?u='+encodeURIComponent(url),o);if(!r.ok)throw new Error('proxy');return await r.json()
+}
+const EXS={
+  binance:{name:'Binance P2P',color:'#f0b90b',async load(a){
+    const get=async t=>{let out=[];for(let p=1;p<=2;p++){
+      const r=await req('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search','POST',{fiat:'KZT',page:p,rows:20,tradeType:t,asset:a,countries:[],proMerchantAds:false,shieldMerchantAds:false,publisherType:null,payTypes:[],classifies:['mass','profession']});
+      out=out.concat((r.data||[]).map(x=>({price:+x.adv.price,min:+x.adv.minSingleTransAmount,max:+(x.adv.dynamicMaxSingleTransAmount||x.adv.maxSingleTransAmount),qty:+x.adv.tradableQuantity,who:x.advertiser.nickName,pay:(x.adv.tradeMethods||[]).map(m=>m.tradeMethodName||m.identifier).filter(Boolean)})))}
+      return out};
+    return [await get('BUY'),await get('SELL')]}},
+  bybit:{name:'Bybit P2P',color:'#ff8a3d',async load(a){await loadBybitPay();
+    const get=async s=>{let out=[];for(let p=1;p<=2;p++){
+      const r=await bybitReq('/fiat/otc/item/online',{userId:'',tokenId:a,currencyId:'KZT',payment:[],side:s,size:'20',page:String(p),amount:'',authMaker:false,canTrade:false});
+      out=out.concat(((r.result||{}).items||[]).map(x=>({price:+x.price,min:+x.minAmount,max:+x.maxAmount,qty:+x.lastQuantity,who:x.nickName,pay:(x.payments||[]).map(i=>PAYMAP[i]||'Метод '+i)})))}
+      return out};
+    return [await get('1'),await get('0')]}},
+  okx:{name:'OKX P2P',color:'#3ddbd9',async load(a){
+    const get=async s=>{
+      const r=await req(`https://www.okx.com/v3/c2c/tradingOrders/books?side=${s}&quoteCurrency=KZT&baseCurrency=${a}&paymentMethod=all&userType=all&showTrade=false&showFollow=false&showAlreadyTraded=false&isAbleFilter=false&receivingAds=false&urlId=0&t=${Date.now()}`,'GET');
+      return ((r.data||{})[s]||[]).map(x=>({price:+x.price,min:+x.quoteMinAmountPerOrder,max:+x.quoteMaxAmountPerOrder,qty:+x.availableAmount,who:x.nickName,pay:(x.paymentMethods||[]).map(String)}))};
+    return [await get('sell'),await get('buy')]}}
+};
+const med=l=>{const s=l.map(x=>x.price).sort((a,b)=>a-b);return s.length?s[s.length>>1]:0};
+
+async function refresh(){
+  $('st').textContent='Загрузка…';
+  await Promise.all(Object.entries(EXS).map(async([id,e])=>{
+    try{
+      let [a,b]=await e.load(S.asset);
+      const ok=x=>x.price>0&&isFinite(x.price)&&isFinite(x.min)&&isFinite(x.max)&&isFinite(x.qty);
+      a=a.filter(ok);b=b.filter(ok);
+      if(med(a)<med(b))[a,b]=[b,a];   // объявления продавцов всегда дороже объявлений покупателей
+      if(!a.length||!b.length)throw new Error('пусто');
+      RAW[id]={asks:a.sort((x,y)=>x.price-y.price),bids:b.sort((x,y)=>y.price-x.price)};ST[id]='ок';
+    }catch(err){delete RAW[id];ST[id]='нет данных'}
+  }));
+  TS=new Date().toLocaleTimeString('ru-RU');build();renderPay();stat();render();
+}
+
+function build(){
+  METHODS={};D={};
+  for(const id in RAW){ST[id]='ок';for(const l of [RAW[id].asks,RAW[id].bids])for(const x of l){
+    x.pk=(x.pay||[]).map(pk);(x.pay||[]).forEach(n=>{const k=pk(n);if(k)(METHODS[k]=METHODS[k]||{name:n,c:0}).c++})}}
+  const f=l=>S.pay.length?l.filter(x=>x.pk.some(k=>S.pay.includes(k))):l;
+  for(const id in RAW){const a=f(RAW[id].asks),b=f(RAW[id].bids);
+    if(a.length||b.length)D[id]={asks:a,bids:b};else ST[id]='нет объявлений с этим способом'}
+}
+const stat=()=>{$('st').textContent='Обновлено '+TS+' · '+Object.entries(EXS).map(([id,e])=>e.name+': '+(ST[id]||'…')).join(' · ')};
+function renderPay(){
+  const ks=[...new Set([...S.pay.filter(k=>METHODS[k]),...Object.keys(METHODS).sort((a,b)=>METHODS[b].c-METHODS[a].c).slice(0,16)])];
+  $('pay').innerHTML=ks.length?'<span class="note">Способ оплаты:</span><button class="pc'+(S.pay.length?'':' on')+'" data-k="">Все</button>'+ks.map(k=>`<button class="pc${S.pay.includes(k)?' on':''}" data-k="${esc(k)}">${esc(METHODS[k].name)} <small>${METHODS[k].c}</small></button>`).join(''):'';
+}
+// Покупка: объявление продавца, сумма A (₸) должна лежать в лимитах и хватать по количеству
+const bestAsk=(l,A)=>l.find(x=>x.min<=A&&A<=x.max&&x.qty*x.price>=A);
+// Продажа: q монет, выручка q*цена должна лежать в лимитах покупателя
+const bestBid=(l,q)=>l.find(x=>{const f=q*x.price;return x.min<=f&&f<=x.max&&x.qty>=q});
+function route(A,i,j){
+  const a=bestAsk(D[i].asks,A);if(!a)return null;
+  const q=A/a.price-(i===j?0:S.fee);if(q<=0)return null;
+  const b=bestBid(D[j].bids,q);if(!b)return null;
+  const out=q*b.price;return{i,j,a,b,q,out,pr:out-A,pc:(out/A-1)*100};
+}
+function routes(A){const r=[],ids=Object.keys(D);for(const i of ids)for(const j of ids){const x=route(A,i,j);if(x)r.push(x)}return r.sort((x,y)=>y.pr-x.pr)}
+
+const sg=n=>(n>=0?'+':'')+fm(n);
+const fq=n=>n.toLocaleString('ru-RU',{maximumFractionDigits:S.asset==='BTC'||S.asset==='ETH'?5:2});
+const lim=x=>`<small>Мин. ${fm(x.min)} ₸ · макс. ${fm(x.max)} ₸</small><small>Доступно ${fq(x.qty)} ${S.asset} (≈ ${fm(x.qty*x.price)} ₸)</small>`+(x.pay&&x.pay.length?`<small>Оплата: ${esc(x.pay.slice(0,3).join(', '))}</small>`:'');
+const dec=()=>S.asset==='BTC'||S.asset==='ETH'?6:2;
+const tr=(r,cls)=>`<tr class="${cls||''}"><td>${EXS[r.i].name}<small>${fp(r.a.price)} ₸ · ${esc(r.a.who)}</small>${lim(r.a)}</td><td>${EXS[r.j].name}<small>${fp(r.b.price)} ₸ · ${esc(r.b.who)}</small>${lim(r.b)}</td><td>${r.q.toFixed(dec())}</td><td>${fm(r.out)}</td><td class="${r.pr>=0?'up':'dn'}">${sg(r.pr)}</td><td class="${r.pr>=0?'up':'dn'}">${r.pc.toFixed(2)}%</td></tr>`;
+const head='<tr><th title="Где и по какой цене вы покупаете монеты (цена продавца)">Купить<th title="Где и по какой цене вы продаёте монеты (цена покупателя)">Продать<th title="Сколько монет окажется у вас после покупки, за вычетом комиссии перевода">Монет<th title="Сколько тенге вы получите после продажи">Получите, ₸<th title="Разница между полученной и потраченной суммой">Прибыль, ₸<th title="Прибыль в процентах от вложенной суммы">%</tr>';
+
+function render(){
+  const ids=Object.keys(D),A=S.amount;
+  if(!ids.length){$('out').innerHTML='<div class="box note">Не удалось получить объявления. Проверь интернет-соединение и нажми «Обновить».</div>';return}
+  const rs=routes(A),b=rs[0];
+  let h='<div class="box"><h2>Лучшая связка на '+fm(A)+' ₸ <span class="pill '+(b&&b.pr>=0?'up':'dn')+'">'+(b?(b.pr>=0?'Есть плюс':'Плюса нет'):'Нет вариантов')+'</span></h2>'+(b?
+    `<div class="big">Купить ${S.asset} на <b>${EXS[b.i].name}</b> по ${fp(b.a.price)} ₸ → продать на <b>${EXS[b.j].name}</b> по ${fp(b.b.price)} ₸</div>
+     <div class="big ${b.pr>=0?'up':'dn'}">${sg(b.pr)} ₸ (${b.pc.toFixed(2)}%)${b.pr<0?' — в плюс не выйти':''}</div>`
+    :'<div class="note">Для этой суммы нет подходящих объявлений — попробуй другую.</div>')+
+    `<small>Учтены лимиты объявлений и остаток монет у мерчанта. Не учтены: ваши банковские комиссии, рейтинг и условия мерчантов, задержки.</small></div>`;
+  if(rs.length)h+=`<div class="box"><h2>Все связки на ${fm(A)} ₸</h2><small class="hint" style="margin-bottom:6px">Строки отсортированы по прибыли: сверху самый выгодный вариант.</small><div class="wrapx"><table>${head}${rs.slice(0,8).map((r,k)=>tr(r,k?'':'best')).join('')}</table></div></div>`;
+  const lad=GRID.map(g=>({g,r:routes(g)[0]})),top=lad.filter(x=>x.r&&x.r.pr>0).sort((x,y)=>y.r.pr-x.r.pr)[0];
+  h+=`<div class="box"><h2>Выгодная сумма</h2><small style="margin-bottom:6px">${top?'Максимум прибыли в ₸ — при '+fm(top.g)+' ₸ ('+sg(top.r.pr)+' ₸, '+top.r.pc.toFixed(2)+'%)':'Сейчас ни на одной сумме связка не даёт плюс'}</small>
+   <div class="wrapx"><table><tr><th title="Сколько тенге вы вкладываете">Сумма, ₸<th>Купить<th>Продать<th>Монет<th>Получите, ₸<th>Прибыль, ₸<th>%</tr>${lad.map(({g,r})=>r?tr(r,top&&g===top.g?'best':'').replace('<tr class="'+(top&&g===top.g?'best':'')+'">',`<tr class="${top&&g===top.g?'best':''}"><td>${fm(g)}</td>`):`<tr><td>${fm(g)}</td><td colspan="6" class="note">нет подходящих объявлений</td></tr>`).join('')}</table></div></div>`;
+  h+='<div class="books">'+ids.map(id=>{
+    const e=EXS[id],ad=l=>l.filter(x=>x.min<=A&&A<=x.max).slice(0,5).map(x=>`<div class="ad"><div class="r1"><b>${fp(x.price)} ₸</b><span>${esc(x.who)}</span></div>${lim(x)}</div>`).join('')||'<small>нет подходящих</small>';
+    return `<div class="box" style="--c:${e.color}"><h3>${e.name}</h3><div class="two"><div><b>Купить (продавцы)</b>${ad(D[id].asks)}</div><div><b>Продать (покупатели)</b>${ad(D[id].bids)}</div></div></div>`}).join('')+'</div>';
+  $('out').innerHTML=h;
+}
+
+function init(){
+  $('asset').value=S.asset;$('amount').value=S.amount;$('fee').value=S.fee;
+  const sv=()=>{try{localStorage.setItem('p2p',JSON.stringify(S))}catch(e){}};
+  $('asset').onchange=()=>{S.asset=$('asset').value;S.fee=FEE[S.asset];$('fee').value=S.fee;sv();refresh()};
+  $('amount').onchange=()=>{S.amount=Math.max(1000,+$('amount').value||100000);sv();render()};
+  $('fee').onchange=()=>{S.fee=Math.max(0,+$('fee').value||0);sv();render()};
+  $('go').onclick=refresh;
+  $('pay').onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.k;
+    S.pay=k?(S.pay.includes(k)?S.pay.filter(x=>x!==k):[...S.pay,k]):[];sv();build();renderPay();stat();render()};
+  window.setRefresh=sec=>{clearInterval(window.__t);window.__t=setInterval(refresh,Math.max(10,sec||30)*1000)};
+  $('amts').innerHTML=[50000,100000,300000,500000,1000000].map(v=>`<button class="pc" data-v="${v}">${v>=1e6?v/1e6+' млн':v/1000+' тыс.'}</button>`).join('');
+  $('amts').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.amount=+b.dataset.v;$('amount').value=S.amount;sv();render()};
+  refresh();setRefresh(30);
+}
+init();
+</script>
+</body>
+</html>
