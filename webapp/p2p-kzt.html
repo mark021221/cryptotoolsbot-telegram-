@@ -86,9 +86,44 @@ input,select{width:100%}
 #closeSettings{all:unset;cursor:pointer;display:block;text-align:center;width:100%;margin-top:18px;background:linear-gradient(135deg,var(--ac),var(--ac2));
   color:#06101f;font-weight:800;padding:12px;border-radius:13px;font-size:14.5px}
 #closeSettings:active{transform:scale(.98)}
+.swrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.swrow span{color:var(--mut);font-size:12.5px;font-weight:600}
+.sw{all:unset;cursor:pointer;width:42px;height:24px;border-radius:999px;background:rgba(255,255,255,.14);position:relative;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.sw.on{background:var(--up)}.sw.on::after{left:20px}
+#alertBanner{position:fixed;left:12px;right:12px;top:10px;z-index:20;background:linear-gradient(135deg,var(--up),#1fb57f);color:#042;
+  font-weight:800;font-size:13px;padding:11px 14px;border-radius:13px;text-align:center;box-shadow:0 10px 28px rgba(0,0,0,.4);
+  opacity:0;transform:translateY(-14px);pointer-events:none;transition:opacity .25s,transform .25s}
+#alertBanner.on{opacity:1;transform:translateY(0)}
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,10px);background:#17181c;border:1px solid var(--line);
+  color:#fff;font-size:13px;font-weight:600;padding:10px 16px;border-radius:12px;z-index:20;opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;box-shadow:0 10px 24px rgba(0,0,0,.4)}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#pullInd{position:fixed;left:0;right:0;top:0;text-align:center;z-index:15;opacity:0;transition:opacity .15s;pointer-events:none;
+  font-size:18px;padding-top:8px;color:var(--mut)}
+.rt{color:var(--mut)!important;font-weight:600}
+.pinbtn{all:unset;cursor:pointer;font-size:14px;margin-right:6px;color:var(--mut);vertical-align:middle}
+.pinbtn:hover{color:#ffd166}
+.fairline{font-size:12.5px;color:var(--mut);margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.fairline b{color:var(--tx)}
+.emptybox{text-align:center;padding:6px 0}
+.emptybox button{margin-top:10px}
+.histwrap{height:120px;position:relative}
+.histwrap canvas{position:absolute;inset:0;width:100%;height:100%}
+.dealhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.delDeal{all:unset;cursor:pointer;color:var(--mut);font-size:11px;margin-top:3px;text-decoration:underline}
+.addDealBtn{margin-top:10px}
+.netrow{display:flex;gap:8px;align-items:center}
+.netrow select{flex:1}
+body.compact .ad>small,body.compact td small:nth-of-type(n+2){display:none}
+body.compact .ad{padding:4px 0}
+body.compact td{padding-top:4px;padding-bottom:4px}
 </style>
 </head>
 <body>
+<div id="pullInd">⟳</div>
+<div id="alertBanner"></div>
+<div id="toast"></div>
 <header>
   <div class="logo">P2P <span class="hcoinbadge" id="hdrCoin">USDT</span></div>
   <button id="go" class="ghost" aria-label="Обновить" title="Обновить"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-3-6.7M21 3v6h-6"/></svg></button>
@@ -101,6 +136,15 @@ input,select{width:100%}
     <h2>Лучшая связка на <span id="heroAmt">—</span></h2>
     <div id="hero">—</div>
   </div>
+  <details class="dbox"><summary>История маржи</summary>
+    <div class="dbody">
+      <small id="histCap" style="margin-bottom:8px"></small>
+      <div class="histwrap"><canvas id="histCv"></canvas></div>
+    </div>
+  </details>
+  <details class="dbox"><summary>Журнал сделок <span id="dealCount">(0)</span></summary>
+    <div class="dbody" id="deals"></div>
+  </details>
   <div id="out"></div>
 </main>
 <div id="backdrop"></div>
@@ -111,9 +155,23 @@ input,select{width:100%}
     <div class="frow"><label>Монета</label><select id="asset"><option>USDT<option>USDC<option>BTC<option>ETH</select></div>
     <div class="frow"><label>Сумма, ₸</label><input id="amount" type="number" min="1000" step="10000"></div>
     <div class="amts" id="amts"></div>
-    <div class="frow" style="margin-top:12px"><label>Комиссия перевода между биржами</label><input id="fee" type="number" min="0" step="any"></div>
+    <div class="frow" style="margin-top:12px">
+      <label>Комиссия перевода между биржами</label>
+      <div class="netrow">
+        <select id="net"></select>
+        <input id="fee" type="number" min="0" step="any" style="width:90px">
+      </div>
+      <small>Сумма по сети — ориентир, актуальную уточняй на бирже перед переводом</small>
+    </div>
     <h3>Способ оплаты</h3>
     <div id="pay" class="pays"></div>
+    <h3>Сигнал о связке</h3>
+    <div class="swrow"><span>Вибро + баннер, пока приложение открыто</span><button id="alertSw" class="sw" role="switch"></button></div>
+    <div class="swrow"><span>Уведомления в Telegram, даже когда приложение закрыто</span><button id="pushSw" class="sw" role="switch"></button></div>
+    <small>Работают, пока на сервере запущен бот. Сообщение придёт в чат с ботом — сначала нажми в нём /start.</small>
+    <div class="frow"><label>Порог сигнала, %</label><input id="alertPct" type="number" min="0" step="0.1"></div>
+    <h3>Вид</h3>
+    <div class="swrow"><span>Компактный список объявлений</span><button id="compactSw" class="sw" role="switch"></button></div>
     <button id="closeSettings">Готово</button>
   </div>
 </div>
@@ -123,9 +181,15 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 const fm=n=>Math.round(n).toLocaleString('ru-RU');
 const fp=n=>n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});
 const $=id=>document.getElementById(id);
-const S={asset:'USDT',amount:100000,fee:1,pay:[]};
+const S={asset:'USDT',amount:100000,fee:1,pay:[],net:'TRC20',alertOn:false,alertPct:0.3,compact:false,pushOn:false};
 try{Object.assign(S,JSON.parse(localStorage.getItem('p2p')||'{}'))}catch(e){}
-const FEE={USDT:1,USDC:1,BTC:0.00005,ETH:0.002};
+const NETFEE={
+  USDT:{TRC20:1,BEP20:0.5,Polygon:0.3,ERC20:8},
+  USDC:{ERC20:8,BEP20:0.5,Polygon:0.3,Solana:0.01},
+  BTC:{Bitcoin:0.0002},
+  ETH:{ERC20:0.0015}
+};
+const tg=window.Telegram&&window.Telegram.WebApp;
 const GRID=[20000,50000,100000,200000,300000,500000,1000000,2000000,5000000];
 let D={},ST={},RAW={},METHODS={},TS='';
 const pk=n=>String(n).toLowerCase().replace(/bank|банк/g,'').replace(/[^a-zа-яё0-9]+/g,' ').trim();
@@ -141,36 +205,159 @@ const EXS={
   binance:{name:'Binance P2P',color:'#f0b90b',async load(a){
     const get=async t=>{let out=[];for(let p=1;p<=2;p++){
       const r=await req('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search','POST',{fiat:'KZT',page:p,rows:20,tradeType:t,asset:a,countries:[],proMerchantAds:false,shieldMerchantAds:false,publisherType:null,payTypes:[],classifies:['mass','profession']});
-      out=out.concat((r.data||[]).map(x=>({price:+x.adv.price,min:+x.adv.minSingleTransAmount,max:+(x.adv.dynamicMaxSingleTransAmount||x.adv.maxSingleTransAmount),qty:+x.adv.tradableQuantity,who:x.advertiser.nickName,pay:(x.adv.tradeMethods||[]).map(m=>m.tradeMethodName||m.identifier).filter(Boolean)})))}
+      out=out.concat((r.data||[]).map(x=>({price:+x.adv.price,min:+x.adv.minSingleTransAmount,max:+(x.adv.dynamicMaxSingleTransAmount||x.adv.maxSingleTransAmount),qty:+x.adv.tradableQuantity,who:x.advertiser.nickName,pay:(x.adv.tradeMethods||[]).map(m=>m.tradeMethodName||m.identifier).filter(Boolean),rating:{orders:x.advertiser.monthOrderCount||null,rate:x.advertiser.monthFinishRate!=null?x.advertiser.monthFinishRate*100:null,merchant:x.advertiser.userType==='merchant'}})))}
       return out};
     return [await get('BUY'),await get('SELL')]}},
   bybit:{name:'Bybit P2P',color:'#ff8a3d',async load(a){await loadBybitPay();
     const get=async s=>{let out=[];for(let p=1;p<=2;p++){
       const r=await bybitReq('/fiat/otc/item/online',{userId:'',tokenId:a,currencyId:'KZT',payment:[],side:s,size:'20',page:String(p),amount:'',authMaker:false,canTrade:false});
-      out=out.concat(((r.result||{}).items||[]).map(x=>({price:+x.price,min:+x.minAmount,max:+x.maxAmount,qty:+x.lastQuantity,who:x.nickName,pay:(x.payments||[]).map(i=>PAYMAP[i]||'Метод '+i)})))}
+      out=out.concat(((r.result||{}).items||[]).map(x=>({price:+x.price,min:+x.minAmount,max:+x.maxAmount,qty:+x.lastQuantity,who:x.nickName,pay:(x.payments||[]).map(i=>PAYMAP[i]||'Метод '+i),rating:{orders:x.recentOrderNum||null,rate:x.recentExecuteRate!=null?(x.recentExecuteRate<=1?x.recentExecuteRate*100:x.recentExecuteRate):null,merchant:String(x.userType)==='1'}})))}
       return out};
     return [await get('1'),await get('0')]}},
   okx:{name:'OKX P2P',color:'#3ddbd9',async load(a){
     const get=async s=>{
       const r=await req(`https://www.okx.com/v3/c2c/tradingOrders/books?side=${s}&quoteCurrency=KZT&baseCurrency=${a}&paymentMethod=all&userType=all&showTrade=false&showFollow=false&showAlreadyTraded=false&isAbleFilter=false&receivingAds=false&urlId=0&t=${Date.now()}`,'GET');
-      return ((r.data||{})[s]||[]).map(x=>({price:+x.price,min:+x.quoteMinAmountPerOrder,max:+x.quoteMaxAmountPerOrder,qty:+x.availableAmount,who:x.nickName,pay:(x.paymentMethods||[]).map(String)}))};
+      return ((r.data||{})[s]||[]).map(x=>({price:+x.price,min:+x.quoteMinAmountPerOrder,max:+x.quoteMaxAmountPerOrder,qty:+x.availableAmount,who:x.nickName,pay:(x.paymentMethods||[]).map(String),rating:{orders:x.completedOrderQuantity||x.completedNumber||null,rate:null,merchant:undefined}}))};
     return [await get('sell'),await get('buy')]}}
 };
 const med=l=>{const s=l.map(x=>x.price).sort((a,b)=>a-b);return s.length?s[s.length>>1]:0};
 
+const ratingBadge=x=>{
+  if(!x.rating)return'';
+  const bits=[];
+  if(x.rating.merchant)bits.push('✓ мерчант');
+  if(x.rating.orders)bits.push(x.rating.orders+' сделок');
+  if(x.rating.rate!=null)bits.push(x.rating.rate.toFixed(0)+'%');
+  return bits.length?`<small class="rt">${bits.join(' · ')}</small>`:''
+};
+
+let PIN=[]; try{PIN=JSON.parse(localStorage.getItem('p2pPin')||'[]')}catch(e){PIN=[]}
+const pinKey=(i,j)=>i+'>'+j;
+const isPinned=(i,j)=>PIN.includes(pinKey(i,j));
+function togglePin(i,j){
+  const k=pinKey(i,j);
+  PIN=PIN.includes(k)?PIN.filter(x=>x!==k):[...PIN,k];
+  try{localStorage.setItem('p2pPin',JSON.stringify(PIN))}catch(e){}
+}
+
+let HIST=[];
+let SRV=[],NEWDATA=false;
+const histKey=()=>'p2pHist_'+S.asset+'_'+S.amount;
+function loadHist(){try{HIST=JSON.parse(localStorage.getItem(histKey())||'[]')}catch(e){HIST=[]}}
+async function loadSrvHist(){
+  try{
+    const r=await fetch(`/history?asset=${S.asset}&amount=${Math.round(S.amount)}&limit=300`);
+    const rows=await r.json();
+    SRV=Array.isArray(rows)?rows.filter(x=>x.pct!=null).map(x=>({t:x.t*1000,pc:+x.pct})):[];
+  }catch(e){SRV=[]}
+}
+loadHist();
+function pushHist(pc){
+  HIST.push({t:Date.now(),pc});
+  const cutoff=Date.now()-48*3600*1000;
+  HIST=HIST.filter(p=>p.t>=cutoff).slice(-400);
+  try{localStorage.setItem(histKey(),JSON.stringify(HIST))}catch(e){}
+}
+function drawHist(){
+  const cv=$('histCv');if(!cv)return;
+  const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;
+  cv.width=r.width*d;cv.height=r.height*d;
+  const ctx=cv.getContext('2d');ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,r.width,r.height);
+  const PTS=SRV.length>=2?SRV:HIST;
+  const cap=$('histCap');
+  if(cap)cap.textContent=SRV.length>=2
+    ?'Данные с сервера: бот снимает маржу каждые несколько минут ('+SRV.length+' точек). Показатель — лучшая связка на выбранную сумму.'
+    :'Пока копится только на этом устройстве, пока приложение открыто. Серверная история ведётся для сумм 50 тыс. / 100 тыс. / 300 тыс. / 500 тыс. / 1 млн ₸ и появится, когда бот запущен.';
+  if(PTS.length<2){ctx.fillStyle='#86898f';ctx.font='12px Manrope,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Недостаточно данных — зайди позже',r.width/2,r.height/2);return}
+  const xs=PTS.map(p=>p.t),ys=PTS.map(p=>p.pc);
+  const t0=Math.min(...xs),t1=Math.max(...xs)||t0+1,lo0=Math.min(0,...ys),hi0=Math.max(0,...ys);
+  const pad=(hi0-lo0)*0.2||1,lo=lo0-pad,hi=hi0+pad;
+  const X=t=>8+(t-t0)/(t1-t0||1)*(r.width-16);
+  const Y=v=>r.height-8-(v-lo)/((hi-lo)||1)*(r.height-16);
+  ctx.strokeStyle='rgba(255,255,255,.14)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,Y(0));ctx.lineTo(r.width,Y(0));ctx.stroke();
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.8;ctx.beginPath();
+  PTS.forEach((p,i)=>i?ctx.lineTo(X(p.t),Y(p.pc)):ctx.moveTo(X(p.t),Y(p.pc)));
+  ctx.stroke();
+  const last=PTS[PTS.length-1];
+  ctx.fillStyle=last.pc>=0?'#35e2a0':'#ff6b7a';ctx.beginPath();ctx.arc(X(last.t),Y(last.pc),3.2,0,7);ctx.fill();
+}
+
+let DEALS=[]; try{DEALS=JSON.parse(localStorage.getItem('p2pDeals')||'[]')}catch(e){DEALS=[]}
+const saveDeals=()=>{try{localStorage.setItem('p2pDeals',JSON.stringify(DEALS.slice(-200)))}catch(e){}};
+function addDeal(r,A){
+  DEALS.push({t:Date.now(),asset:S.asset,i:r.i,j:r.j,pr:r.pr,pc:r.pc,amount:A});
+  saveDeals();renderDeals();
+  toast('Добавлено в журнал');
+  if(tg)try{tg.HapticFeedback.notificationOccurred('success')}catch(e){}
+}
+function renderDeals(){
+  const total=DEALS.reduce((s,d)=>s+d.pr,0);
+  $('dealCount').textContent='('+DEALS.length+')';
+  const rows=DEALS.slice().map((d,ix)=>({d,ix})).reverse().slice(0,50).map(({d,ix})=>
+    `<div class="ad"><div class="r1"><b class="${d.pr>=0?'up':'dn'}">${sg(d.pr)} ₸</b><span>${new Date(d.t).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></div>
+     <small>${d.asset}: ${EXS[d.i]?EXS[d.i].name:d.i} → ${EXS[d.j]?EXS[d.j].name:d.j} · ${d.pc.toFixed(2)}%</small>
+     <button class="delDeal" data-ix="${ix}">Удалить</button></div>`).join('');
+  $('deals').innerHTML=(DEALS.length?`<div class="dealhead"><b>Итого</b><b class="${total>=0?'up':'dn'}">${sg(total)} ₸</b></div>`:'')+
+    (rows||'<small>Пока пусто — на лучшей связке нажми «Добавить в журнал», когда совершишь сделку.</small>');
+}
+
+function toast(msg){const t=$('toast');if(!t)return;t.textContent=msg;t.classList.add('on');clearTimeout(window.__toastT);window.__toastT=setTimeout(()=>t.classList.remove('on'),2200)}
+
+const tgUid=()=>tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user?tg.initDataUnsafe.user.id:null;
+async function syncPush(notify){
+  const id=tgUid();
+  if(!id){if(notify)toast('Открой приложение через бота в Telegram — иначе непонятно, куда слать уведомления');return false}
+  try{
+    const r=await fetch('/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({uid:id,on:S.pushOn,asset:S.asset,amount:S.amount,threshold:S.alertPct,fee:S.fee})});
+    if(!r.ok)throw 0;
+    if(notify)toast(S.pushOn?'Уведомления в Telegram включены':'Уведомления выключены');
+    return true;
+  }catch(e){if(notify)toast('Не удалось сохранить — проверь соединение');return false}
+}
+
+let lastAlertAt=0,CURBEST=null;
+function checkAlert(b){
+  if(!S.alertOn||!b||b.pc<S.alertPct)return;
+  if(Date.now()-lastAlertAt<5*60*1000)return;
+  lastAlertAt=Date.now();
+  if(tg)try{tg.HapticFeedback.notificationOccurred('success')}catch(e){}
+  const el=$('alertBanner');
+  el.textContent='🔔 Связка '+b.pc.toFixed(2)+'% — выше твоего порога '+S.alertPct+'%';
+  el.classList.add('on');
+  clearTimeout(window.__abTimer);
+  window.__abTimer=setTimeout(()=>el.classList.remove('on'),8000);
+}
+
+let FAIR=null;
+async function loadFair(){
+  try{
+    const fx=await req('https://open.er-api.com/v6/latest/USD','GET');
+    const kzt=fx.rates&&fx.rates.KZT; if(!kzt)throw 0;
+    let usd=1;
+    if(S.asset==='BTC'||S.asset==='ETH'){
+      const pr=await req(`https://api.binance.com/api/v3/ticker/price?symbol=${S.asset}USDT`,'GET');
+      usd=+pr.price||1;
+    }
+    FAIR={usdPrice:usd,kzt,theoretical:usd*kzt};
+  }catch(e){FAIR=null}
+}
 async function refresh(){
   $('st').textContent='Загрузка…';
-  await Promise.all(Object.entries(EXS).map(async([id,e])=>{
-    try{
-      let [a,b]=await e.load(S.asset);
-      const ok=x=>x.price>0&&isFinite(x.price)&&isFinite(x.min)&&isFinite(x.max)&&isFinite(x.qty);
-      a=a.filter(ok);b=b.filter(ok);
-      if(med(a)<med(b))[a,b]=[b,a];   // объявления продавцов всегда дороже объявлений покупателей
-      if(!a.length||!b.length)throw new Error('пусто');
-      RAW[id]={asks:a.sort((x,y)=>x.price-y.price),bids:b.sort((x,y)=>y.price-x.price)};ST[id]='ок';
-    }catch(err){delete RAW[id];ST[id]='нет данных'}
-  }));
-  TS=new Date().toLocaleTimeString('ru-RU');build();renderPay();stat();render();
+  await Promise.all([
+    loadFair(),loadSrvHist(),
+    ...Object.entries(EXS).map(async([id,e])=>{
+      try{
+        let [a,b]=await e.load(S.asset);
+        const ok=x=>x.price>0&&isFinite(x.price)&&isFinite(x.min)&&isFinite(x.max)&&isFinite(x.qty);
+        a=a.filter(ok);b=b.filter(ok);
+        if(med(a)<med(b))[a,b]=[b,a];   // объявления продавцов всегда дороже объявлений покупателей
+        if(!a.length||!b.length)throw new Error('пусто');
+        RAW[id]={asks:a.sort((x,y)=>x.price-y.price),bids:b.sort((x,y)=>y.price-x.price)};ST[id]='ок';
+      }catch(err){delete RAW[id];ST[id]='нет данных'}
+    })
+  ]);
+  TS=new Date().toLocaleTimeString('ru-RU');build();renderPay();stat();NEWDATA=true;render();
 }
 
 function build(){
@@ -200,50 +387,145 @@ function routes(A){const r=[],ids=Object.keys(D);for(const i of ids)for(const j 
 
 const sg=n=>(n>=0?'+':'')+fm(n);
 const fq=n=>n.toLocaleString('ru-RU',{maximumFractionDigits:S.asset==='BTC'||S.asset==='ETH'?5:2});
-const lim=x=>`<small>Мин. ${fm(x.min)} ₸ · макс. ${fm(x.max)} ₸</small><small>Доступно ${fq(x.qty)} ${S.asset} (≈ ${fm(x.qty*x.price)} ₸)</small>`+(x.pay&&x.pay.length?`<small>Оплата: ${esc(x.pay.slice(0,3).join(', '))}</small>`:'');
+const lim=x=>`<small>Мин. ${fm(x.min)} ₸ · макс. ${fm(x.max)} ₸</small><small>Доступно ${fq(x.qty)} ${S.asset} (≈ ${fm(x.qty*x.price)} ₸)</small>`+(x.pay&&x.pay.length?`<small>Оплата: ${esc(x.pay.slice(0,3).join(', '))}</small>`:'')+ratingBadge(x);
 const dec=()=>S.asset==='BTC'||S.asset==='ETH'?6:2;
-const tr=(r,cls)=>`<tr class="${cls||''}"><td>${EXS[r.i].name}<small>${fp(r.a.price)} ₸ · ${esc(r.a.who)}</small>${lim(r.a)}</td><td>${EXS[r.j].name}<small>${fp(r.b.price)} ₸ · ${esc(r.b.who)}</small>${lim(r.b)}</td><td>${r.q.toFixed(dec())}</td><td>${fm(r.out)}</td><td class="${r.pr>=0?'up':'dn'}">${sg(r.pr)}</td><td class="${r.pr>=0?'up':'dn'}">${r.pc.toFixed(2)}%</td></tr>`;
+const tr=(r,cls)=>{const pinned=isPinned(r.i,r.j),cl=[pinned?'best':'',cls||''].filter(Boolean).join(' ');
+  return `<tr class="${cl}"><td><button class="pinbtn" data-pin="${pinKey(r.i,r.j)}" aria-label="Закрепить">${pinned?'★':'☆'}</button>${EXS[r.i].name}<small>${fp(r.a.price)} ₸ · ${esc(r.a.who)}</small>${lim(r.a)}</td><td>${EXS[r.j].name}<small>${fp(r.b.price)} ₸ · ${esc(r.b.who)}</small>${lim(r.b)}</td><td>${r.q.toFixed(dec())}</td><td>${fm(r.out)}</td><td class="${r.pr>=0?'up':'dn'}">${sg(r.pr)}</td><td class="${r.pr>=0?'up':'dn'}">${r.pc.toFixed(2)}%</td></tr>`};
 const head='<tr><th title="Где и по какой цене вы покупаете монеты (цена продавца)">Купить<th title="Где и по какой цене вы продаёте монеты (цена покупателя)">Продать<th title="Сколько монет окажется у вас после покупки, за вычетом комиссии перевода">Монет<th title="Сколько тенге вы получите после продажи">Получите, ₸<th title="Разница между полученной и потраченной суммой">Прибыль, ₸<th title="Прибыль в процентах от вложенной суммы">%</tr>';
 
 function render(){
   const ids=Object.keys(D),A=S.amount;
   $('heroAmt').textContent=fm(A)+' ₸';
-  if(!ids.length){$('hero').innerHTML='<div class="note">Не удалось получить объявления. Проверь интернет-соединение и нажми «Обновить».</div>';$('out').innerHTML='';return}
+  if(!ids.length){
+    $('hero').innerHTML='<div class="emptybox">⚠️ Не получилось загрузить объявления<br><small>Проверь интернет-соединение</small><br><button id="retryBtn" class="pc">Обновить</button></div>';
+    $('out').innerHTML='';CURBEST=null;return;
+  }
   const rs=routes(A),b=rs[0];
+  CURBEST=b;
+  if(b&&NEWDATA)pushHist(b.pc);
+  NEWDATA=false;
+  checkAlert(b);
+  const fairLine=(FAIR&&b)?(()=>{
+    const diff=(b.a.price/FAIR.theoretical-1)*100;
+    return `<div class="fairline">Биржевой курс ≈ <b>${fp(FAIR.theoretical)} ₸</b> · цена покупки P2P ${diff>=0?'выше':'ниже'} на <b class="${diff>=0?'dn':'up'}">${Math.abs(diff).toFixed(2)}%</b></div>`;
+  })():'';
   $('hero').innerHTML=(b?
     `<div class="pill ${b.pr>=0?'up':'dn'}" style="margin-bottom:10px">${b.pr>=0?'Есть плюс':'Плюса нет'}</div>
      <div class="big">Купить ${S.asset} на <b>${EXS[b.i].name}</b> по ${fp(b.a.price)} ₸ → продать на <b>${EXS[b.j].name}</b> по ${fp(b.b.price)} ₸</div>
-     <div class="hv ${b.pr>=0?'up':'dn'}">${sg(b.pr)} ₸</div><small>${b.pc.toFixed(2)}%${b.pr<0?' — в плюс не выйти':''}</small>`
+     <div class="hv ${b.pr>=0?'up':'dn'}">${sg(b.pr)} ₸</div><small>${b.pc.toFixed(2)}%${b.pr<0?' — в плюс не выйти':''}</small>
+     <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap">
+       <button id="addDealBtn" class="pc">➕ В журнал</button>
+       <button id="shareBtn" class="pc">📋 Скопировать</button>
+     </div>`
     :'<div class="pill dn" style="margin-bottom:10px">Нет вариантов</div><div class="note">Для этой суммы нет подходящих объявлений — попробуй другую.</div>')+
+    fairLine+
     `<small style="margin-top:10px">Учтены лимиты объявлений и остаток монет у мерчанта. Не учтены: ваши банковские комиссии, рейтинг и условия мерчантов, задержки.</small>`;
+  drawHist();
   let h='';
-  if(rs.length)h+=`<details class="dbox"><summary>Все связки <span>(${rs.length})</span></summary><div class="dbody"><small class="hint" style="margin-bottom:6px">Строки отсортированы по прибыли: сверху самый выгодный вариант.</small><div class="wrapx"><table>${head}${rs.slice(0,8).map((r,k)=>tr(r,k?'':'best')).join('')}</table></div></div></details>`;
+  if(PIN.length){
+    const prows=PIN.map(k=>{const [i,j]=k.split('>');return (D[i]&&D[j])?route(A,i,j):null}).filter(Boolean);
+    if(prows.length)h+=`<details class="dbox" open><summary>⭐ Избранное <span>(${prows.length})</span></summary><div class="dbody"><div class="wrapx"><table>${head}${prows.map(r=>tr(r)).join('')}</table></div></div></details>`;
+  }
+  if(rs.length)h+=`<details class="dbox"><summary>Все связки <span>(${rs.length})</span></summary><div class="dbody"><small class="hint" style="margin-bottom:6px">Строки отсортированы по прибыли: сверху самый выгодный вариант. ☆ — закрепить в избранном.</small><div class="wrapx"><table>${head}${rs.slice(0,8).map((r,k)=>tr(r,k?'':'best')).join('')}</table></div></div></details>`;
   const lad=GRID.map(g=>({g,r:routes(g)[0]})),top=lad.filter(x=>x.r&&x.r.pr>0).sort((x,y)=>y.r.pr-x.r.pr)[0];
   h+=`<details class="dbox"><summary>Выгодная сумма</summary><div class="dbody"><small style="margin-bottom:6px">${top?'Максимум прибыли в ₸ — при '+fm(top.g)+' ₸ ('+sg(top.r.pr)+' ₸, '+top.r.pc.toFixed(2)+'%)':'Сейчас ни на одной сумме связка не даёт плюс'}</small>
-   <div class="wrapx"><table><tr><th title="Сколько тенге вы вкладываете">Сумма, ₸<th>Купить<th>Продать<th>Монет<th>Получите, ₸<th>Прибыль, ₸<th>%</tr>${lad.map(({g,r})=>r?tr(r,top&&g===top.g?'best':'').replace('<tr class="'+(top&&g===top.g?'best':'')+'">',`<tr class="${top&&g===top.g?'best':''}"><td>${fm(g)}</td>`):`<tr><td>${fm(g)}</td><td colspan="6" class="note">нет подходящих объявлений</td></tr>`).join('')}</table></div></div></details>`;
-  h+=`<details class="dbox"><summary>Объявления по биржам <span>(${ids.length})</span></summary><div class="dbody"><div class="books">`+ids.map(id=>{
+   <div class="wrapx"><table><tr><th title="Сколько тенге вы вкладываете">Сумма, ₸<th>Купить<th>Продать<th>Монет<th>Получите, ₸<th>Прибыль, ₸<th>%</tr>${lad.map(({g,r})=>{
+     if(!r)return `<tr><td>${fm(g)}</td><td colspan="6" class="note">нет подходящих объявлений</td></tr>`;
+     return tr(r,top&&g===top.g?'best':'').replace('<td>','<td>'+fm(g)+'</td><td>');
+   }).join('')}</table></div></div></details>`;
+  h+=`<details class="dbox"><summary>Объявления по биржам <span>(${ids.length})</span></summary><div class="dbody">
+    <input id="adSearch" placeholder="Поиск по продавцу…" style="margin-bottom:10px">
+    <div class="books">`+ids.map(id=>{
     const e=EXS[id],ad=l=>l.filter(x=>x.min<=A&&A<=x.max).slice(0,5).map(x=>`<div class="ad"><div class="r1"><b>${fp(x.price)} ₸</b><span>${esc(x.who)}</span></div>${lim(x)}</div>`).join('')||'<small>нет подходящих</small>';
     return `<div class="box" style="--c:${e.color}"><h3>${e.name}</h3><div class="two"><div><b>Купить (продавцы)</b>${ad(D[id].asks)}</div><div><b>Продать (покупатели)</b>${ad(D[id].bids)}</div></div></div>`}).join('')+'</div></div></details>';
   $('out').innerHTML=h;
 }
 
+function populateNet(){
+  const nets=Object.keys(NETFEE[S.asset]||{TRC20:1});
+  if(!nets.includes(S.net))S.net=nets[0];
+  $('net').innerHTML=nets.map(n=>`<option ${n===S.net?'selected':''}>${n}</option>`).join('');
+  S.fee=NETFEE[S.asset]&&NETFEE[S.asset][S.net]!=null?NETFEE[S.asset][S.net]:S.fee;
+  $('fee').value=S.fee;
+}
+function applySwitches(){
+  $('alertSw').classList.toggle('on',S.alertOn);
+  $('pushSw').classList.toggle('on',S.pushOn);
+  $('compactSw').classList.toggle('on',S.compact);
+  document.body.classList.toggle('compact',S.compact);
+  $('alertPct').value=S.alertPct;
+}
 function init(){
-  $('asset').value=S.asset;$('amount').value=S.amount;$('fee').value=S.fee;$('hdrCoin').textContent=S.asset;
-  const sv=()=>{try{localStorage.setItem('p2p',JSON.stringify(S))}catch(e){}};
-  $('asset').onchange=()=>{S.asset=$('asset').value;S.fee=FEE[S.asset];$('fee').value=S.fee;$('hdrCoin').textContent=S.asset;sv();refresh()};
-  $('amount').onchange=()=>{S.amount=Math.max(1000,+$('amount').value||100000);sv();render()};
+  $('asset').value=S.asset;$('amount').value=S.amount;$('hdrCoin').textContent=S.asset;
+  populateNet();applySwitches();renderDeals();
+  const save=()=>{try{localStorage.setItem('p2p',JSON.stringify(S))}catch(e){}};
+  const sv=()=>{save();if(S.pushOn){clearTimeout(window.__syncT);window.__syncT=setTimeout(()=>syncPush(false),700)}};
+  $('asset').onchange=()=>{S.asset=$('asset').value;$('hdrCoin').textContent=S.asset;populateNet();loadHist();sv();refresh()};
+  $('amount').onchange=()=>{S.amount=Math.max(1000,+$('amount').value||100000);loadHist();sv();loadSrvHist().then(render)};
+  $('net').onchange=()=>{S.net=$('net').value;S.fee=NETFEE[S.asset][S.net];$('fee').value=S.fee;sv();render()};
   $('fee').onchange=()=>{S.fee=Math.max(0,+$('fee').value||0);sv();render()};
   $('go').onclick=refresh;
   $('pay').onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.k;
     S.pay=k?(S.pay.includes(k)?S.pay.filter(x=>x!==k):[...S.pay,k]):[];sv();build();renderPay();stat();render()};
   window.setRefresh=sec=>{clearInterval(window.__t);window.__t=setInterval(refresh,Math.max(10,sec||30)*1000)};
   $('amts').innerHTML=[50000,100000,300000,500000,1000000].map(v=>`<button class="pc" data-v="${v}">${v>=1e6?v/1e6+' млн':v/1000+' тыс.'}</button>`).join('');
-  $('amts').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.amount=+b.dataset.v;$('amount').value=S.amount;sv();render()};
+  $('amts').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.amount=+b.dataset.v;$('amount').value=S.amount;loadHist();sv();loadSrvHist().then(render)};
+  $('alertSw').onclick=()=>{S.alertOn=!S.alertOn;applySwitches();sv()};
+  $('pushSw').onclick=async()=>{
+    S.pushOn=!S.pushOn;applySwitches();save();
+    const ok=await syncPush(true);
+    if(!ok&&S.pushOn){S.pushOn=false;applySwitches();save()}
+  };
+  $('alertPct').onchange=()=>{S.alertPct=Math.max(0,+$('alertPct').value||0);sv()};
+  $('compactSw').onclick=()=>{S.compact=!S.compact;applySwitches();sv()};
   const openSheet=()=>{$('sheet').classList.add('on');$('backdrop').classList.add('on')};
   const closeSheet=()=>{$('sheet').classList.remove('on');$('backdrop').classList.remove('on')};
   $('openSettings').onclick=openSheet;
   $('closeSettings').onclick=closeSheet;
   $('backdrop').onclick=closeSheet;
+
+  // клики внутри динамически обновляемых блоков (делегирование)
+  document.addEventListener('click',e=>{
+    const pin=e.target.closest('.pinbtn');
+    if(pin){togglePin(...pin.dataset.pin.split('>'));render();return}
+    if(e.target.id==='addDealBtn'&&CURBEST){addDeal(CURBEST,S.amount);return}
+    if(e.target.id==='shareBtn'&&CURBEST){
+      const r=CURBEST;
+      const txt=`P2P связка (${S.asset}): купить на ${EXS[r.i].name} по ${fp(r.a.price)} ₸ → продать на ${EXS[r.j].name} по ${fp(r.b.price)} ₸. Прибыль: ${sg(r.pr)} ₸ (${r.pc.toFixed(2)}%).`;
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(txt).then(()=>toast('Скопировано — вставь в чат')).catch(()=>toast('Не удалось скопировать'));
+      }else toast('Копирование не поддерживается');
+      return;
+    }
+    if(e.target.id==='retryBtn'){refresh();return}
+    const del=e.target.closest('.delDeal');
+    if(del){DEALS.splice(+del.dataset.ix,1);saveDeals();renderDeals();return}
+  });
+  document.addEventListener('input',e=>{
+    if(e.target.id!=='adSearch')return;
+    const q=e.target.value.trim().toLowerCase();
+    document.querySelectorAll('.books .ad').forEach(el=>{
+      const who=(el.querySelector('.r1 span')||{}).textContent||'';
+      el.style.display=!q||who.toLowerCase().includes(q)?'':'none';
+    });
+  });
+
+  // потянуть вниз, чтобы обновить
+  let pullY=0,pulling=false;
+  const atTop=()=>(document.documentElement.scrollTop||document.body.scrollTop)<=0;
+  document.addEventListener('touchstart',e=>{if(atTop()){pulling=true;pullY=e.touches[0].clientY}},{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!pulling)return;
+    const dy=e.touches[0].clientY-pullY;
+    if(dy>0&&atTop())$('pullInd').style.opacity=Math.min(1,dy/70);
+  },{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(!pulling)return;pulling=false;
+    const dy=e.changedTouches[0].clientY-pullY;
+    $('pullInd').style.opacity=0;
+    if(dy>70){refresh();if(tg)try{tg.HapticFeedback.impactOccurred('light')}catch(err){}}
+  });
+
   refresh();setRefresh(30);
 }
 init();
